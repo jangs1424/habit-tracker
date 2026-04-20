@@ -119,10 +119,8 @@
         @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
         .habit-check.checked::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
         .habit-item-info{min-width:0}
-        input.habit-time-pill{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:4px 6px;border-radius:8px;border:none;outline:none;font-family:inherit;cursor:pointer;text-align:center;width:62px;flex-shrink:0;-webkit-appearance:none;appearance:none;box-sizing:border-box;height:26px}
-        input.habit-time-pill::-webkit-calendar-picker-indicator{display:none}
-        input.habit-time-pill::-webkit-date-and-time-value{text-align:center;margin:0;padding:0}
-        .habit-cat-icon{font-size:22px;flex-shrink:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px}
+        .habit-time-pill{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:4px 8px;border-radius:8px;flex-shrink:0;cursor:pointer;text-align:center;user-select:none;white-space:nowrap;min-width:46px;display:inline-flex;align-items:center;justify-content:center;height:24px}
+        .habit-cat-icon{font-size:18px;flex-shrink:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px}
         .habit-task-pill{font-size:10px;font-weight:700;color:#fff;background:var(--warning);padding:2px 6px;border-radius:6px;white-space:nowrap;display:inline-block;margin-left:4px;vertical-align:middle}
         .growth-quote{background:linear-gradient(135deg,var(--primary-light),#F0EEFF);border-radius:var(--radius);padding:18px 20px;margin:16px 0;text-align:center;position:relative;overflow:hidden;cursor:pointer}
         .growth-quote::before{content:'✨';position:absolute;top:-10px;left:-10px;font-size:60px;opacity:.1;transform:rotate(-15deg)}
@@ -273,20 +271,20 @@
         .nav-icon{font-size:22px}
 
         .page{display:none}.page.active{display:block}
-        .celebration{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;z-index:200;pointer-events:none;opacity:0;transition:opacity .2s}
-        .celebration.show{opacity:1}
-        .celebration-inner{display:flex;flex-direction:column;align-items:center;gap:18px;transform:scale(0)}
-        .celebration.show .celebration-inner{animation:celebPop 1.6s cubic-bezier(.34,1.56,.64,1) forwards}
-        @keyframes celebPop{0%{transform:scale(0) rotate(-180deg)}15%{transform:scale(1.3) rotate(15deg)}30%{transform:scale(.95) rotate(-8deg)}45%{transform:scale(1.1) rotate(4deg)}60%{transform:scale(1) rotate(0)}85%{transform:scale(1)}100%{transform:scale(1.1) translateY(-20px);opacity:0}}
-        .celebration-emoji{font-size:140px;filter:drop-shadow(0 12px 30px rgba(0,0,0,.2));line-height:1}
-        .celebration-text{font-size:16px;font-weight:700;color:var(--primary);background:#fff;padding:12px 22px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.15);white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;text-align:center}
-        .celebration-spark{position:absolute;font-size:28px;opacity:0;pointer-events:none}
-        .celebration.show .celebration-spark{animation:sparkFly 1.4s ease-out forwards}
-        .celebration-spark:nth-child(1){animation-delay:.1s}
-        .celebration-spark:nth-child(2){animation-delay:.2s}
-        .celebration-spark:nth-child(3){animation-delay:.15s}
-        .celebration-spark:nth-child(4){animation-delay:.25s}
-        @keyframes sparkFly{0%{opacity:0;transform:translate(0,0) scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx,80px),var(--dy,-80px)) scale(1.2) rotate(360deg)}}
+        .celebration{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;z-index:200;pointer-events:none;opacity:0;transition:opacity .3s;background:rgba(255,255,255,0)}
+        .celebration.show{opacity:1;background:rgba(255,255,255,.4);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+        .celebration-inner{display:flex;flex-direction:column;align-items:center;gap:22px;transform:translateY(20px) scale(.8);opacity:0}
+        .celebration.show .celebration-inner{animation:celebCalm 2.4s ease-out forwards}
+        @keyframes celebCalm{
+            0%{transform:translateY(20px) scale(.8);opacity:0}
+            18%{transform:translateY(0) scale(1.04);opacity:1}
+            28%{transform:translateY(0) scale(1);opacity:1}
+            75%{transform:translateY(-4px) scale(1);opacity:1}
+            100%{transform:translateY(-30px) scale(.95);opacity:0}
+        }
+        .celebration-emoji{font-size:120px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.15));line-height:1;animation:emojiFloat 2.4s ease-in-out}
+        @keyframes emojiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+        .celebration-text{font-size:15px;font-weight:600;color:var(--primary);background:#fff;padding:12px 22px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.12);white-space:nowrap;max-width:85vw;overflow:hidden;text-overflow:ellipsis;text-align:center;letter-spacing:-.2px}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -403,10 +401,6 @@
 </div>
 
 <div class="celebration" id="celebration">
-    <span class="celebration-spark" style="--dx:-90px;--dy:-60px">✨</span>
-    <span class="celebration-spark" style="--dx:90px;--dy:-70px">⭐</span>
-    <span class="celebration-spark" style="--dx:-70px;--dy:80px">💫</span>
-    <span class="celebration-spark" style="--dx:80px;--dy:90px">✨</span>
     <div class="celebration-inner">
         <div class="celebration-emoji" id="celebEmoji">🎉</div>
         <div class="celebration-text" id="celebText"></div>
@@ -678,7 +672,7 @@ function renderHabits(){
             if(sk)html+=`<div class="habit-check" style="border-color:var(--warning);color:var(--warning);font-size:11px;display:flex;align-items:center;justify-content:center">⏭</div>`;
             else html+=`<div class="habit-check ${ck?'checked':''}" onclick="toggleHabit('${h.id}')"></div>`;
             const ic=CAT_ICONS[h.cat]||'•';
-            html+=`<input type="time" class="habit-time-pill" value="${h.time||''}" onchange="updateHabitTime('${h.id}',this.value)" onclick="event.stopPropagation()">`;
+            html+=`<span class="habit-time-pill" onclick="editHabitTime('${h.id}')">${h.time||'--:--'}</span>`;
             html+=`<span class="habit-cat-icon" title="${h.cat||''}">${ic}</span>`;
             html+=`<div class="habit-item-info"><div class="habit-item-name">${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
             if(h.hasInput&&!sk)html+=`<div><input class="habit-input" type="number" step="0.1" value="${D.running[t]||''}" onchange="saveRunning(this.value)" placeholder="0"><span class="habit-input-unit">${h.unit}</span></div>`;
@@ -689,7 +683,7 @@ function renderHabits(){
             const cls=tk.done?'completed':'';
             html+=`<div class="habit-item ${cls}">`;
             html+=`<div class="habit-check ${tk.done?'checked':''}" onclick="toggleDailyTask(${i})"></div>`;
-            html+=`<input type="time" class="habit-time-pill" value="${tk.time||''}" onchange="updateTaskTime(${i},this.value)" onclick="event.stopPropagation()">`;
+            html+=`<span class="habit-time-pill" onclick="editTaskTime(${i})">${tk.time||'--:--'}</span>`;
             html+=`<span class="habit-cat-icon">🎯</span>`;
             html+=`<div class="habit-item-info"><div class="habit-item-name">${tk.name}<span class="habit-task-pill">오늘</span></div></div>`;
             html+=`<div class="task-delete-btn" onclick="deleteDailyTask(${i})">×</div>`;
@@ -920,6 +914,19 @@ function toggleHabit(id){
 }
 function updateHabitTime(id,v){const h=D.habits.find(x=>x.id===id);if(h&&v){h.time=v;save();render();}}
 function updateTaskTime(idx,v){const t=td();if(D.dailyTasks&&D.dailyTasks[t]&&D.dailyTasks[t][idx]&&v){D.dailyTasks[t][idx].time=v;save();render();}}
+function _openTimePicker(initial,onSet){
+    const inp=document.createElement('input');
+    inp.type='time';inp.value=initial||'12:00';
+    inp.style.cssText='position:fixed;top:50%;left:50%;width:1px;height:1px;opacity:0;border:none;padding:0;margin:0';
+    document.body.appendChild(inp);
+    let done=false;
+    const finish=()=>{if(done)return;done=true;if(inp.value&&inp.value!==initial)onSet(inp.value);if(inp.parentNode)inp.parentNode.removeChild(inp);};
+    inp.addEventListener('change',finish);
+    inp.addEventListener('blur',()=>setTimeout(finish,200));
+    setTimeout(()=>{inp.focus();if(inp.showPicker){try{inp.showPicker();}catch(e){inp.click();}}else inp.click();},10);
+}
+function editHabitTime(id){const h=D.habits.find(x=>x.id===id);if(!h)return;_openTimePicker(h.time,v=>{h.time=v;save();render();});}
+function editTaskTime(idx){const t=td();if(!D.dailyTasks||!D.dailyTasks[t]||!D.dailyTasks[t][idx])return;const tk=D.dailyTasks[t][idx];_openTimePicker(tk.time,v=>{tk.time=v;save();render();});}
 const GROWTH_QUOTES=[
     {q:'작은 습관이 쌓여 큰 변화가 돼',s:'— 오늘도 한 걸음'},
     {q:'어제보다 0.1% 나아졌으면 충분해',s:'— 꾸준함의 복리'},
@@ -1047,7 +1054,7 @@ function calcHabitStreak(hid){let s=0,d=new Date();for(let i=0;i<D.challengeDays
 function getWeekData(){const days=['일','월','화','수','목','금','토'];let tp=0,cnt=0,bp=0,bd='-',wx=0;const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=date.toISOString().split('T')[0];if(ds>td())break;const c=compForDate(ds);tp+=c;cnt++;if(c>bp){bp=c;bd=days[date.getDay()];}const h=getHabitsForDay(date.getDay());const dd=D.checks[ds]||{};wx+=h.filter(x=>dd[x.id]).length*10;}return{avgPct:cnt?Math.round(tp/cnt*100):0,bestDay:bd,weekXP:wx};}
 function getCatStats(){const s={};CATEGORIES.forEach(c=>{s[c]={t:0,d:0};});const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=date.toISOString().split('T')[0];if(ds>td())break;const h=getHabitsForDay(date.getDay());const dd=D.checks[ds]||{};h.forEach(x=>{if(s[x.cat]){s[x.cat].t++;if(dd[x.id])s[x.cat].d++;}});}const r={};CATEGORIES.forEach(c=>{r[c]=s[c].t?Math.round(s[c].d/s[c].t*100):0;});return r;}
 function getPeriodDates(){/* placeholder */return[];}
-function celebrate(e,msg){const el=document.getElementById('celebration');document.getElementById('celebEmoji').textContent=e;const tx=document.getElementById('celebText');if(tx)tx.textContent=msg||'';el.classList.remove('show');void el.offsetWidth;el.classList.add('show');clearTimeout(window._celebT);window._celebT=setTimeout(()=>el.classList.remove('show'),1600);}
+function celebrate(e,msg){const el=document.getElementById('celebration');document.getElementById('celebEmoji').textContent=e;const tx=document.getElementById('celebText');if(tx)tx.textContent=msg||'';el.classList.remove('show');void el.offsetWidth;el.classList.add('show');clearTimeout(window._celebT);window._celebT=setTimeout(()=>el.classList.remove('show'),2400);}
 function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');render();}
 
 render();
