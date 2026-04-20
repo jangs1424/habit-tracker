@@ -229,12 +229,14 @@
         .evo-arrow{color:var(--border);font-size:12px}
 
         /* SETTINGS */
-        .settings-card{background:var(--card);border-radius:var(--radius);padding:16px 14px;box-shadow:var(--shadow);margin-bottom:12px}
-        .settings-card input[type="date"],.settings-card input[type="time"]{width:100%;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;background:#fff}
+        .settings-card{background:var(--card);border-radius:var(--radius);padding:16px 14px;box-shadow:var(--shadow);margin-bottom:12px;box-sizing:border-box;max-width:100%}
+        .settings-card input[type="date"],.settings-card input[type="time"]{box-sizing:border-box;-webkit-appearance:none;appearance:none;background:#fff}
         .settings-card h3{font-size:14px;font-weight:600;margin-bottom:12px}
         .settings-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;outline:none;margin-bottom:8px}
         .settings-input:focus{border-color:var(--primary)}
-        .settings-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
+        .settings-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;max-width:100%}
+        .settings-row > .settings-input{flex:1 1 auto;width:auto;min-width:0}
+        .settings-row > button{flex-shrink:0;white-space:nowrap}
         .settings-row input{flex:1;min-width:0;max-width:100%}
         .link-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
         .link-item a{flex:1;font-size:12px;color:var(--primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -406,6 +408,7 @@
         <div class="settings-card"><h3>크리처 이름</h3><input type="text" class="settings-input" id="creatureNameInput" placeholder="이름을 지어주세요" onchange="saveCreatureName()"></div>
         <div class="settings-card"><h3>📚 읽는 책</h3><div id="booksList"></div><div class="settings-row"><input class="settings-input" id="newBookInput" placeholder="책 제목 추가"><button class="btn btn-sm" onclick="addBook()">추가</button></div></div>
         <div class="settings-card"><h3>레벨/XP 초기화</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">현재: Lv.<span id="curLv"></span> · XP <span id="curXp"></span></div><button class="btn-outline btn-sm" style="width:100%" onclick="resetLevel()">레벨 1로 초기화</button></div>
+        <div class="settings-card"><h3>시간 기본값 복원</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">9시 기상 · 09:10 명상 · 09:30 홈트/러닝 · ... 기본 타임라인으로 되돌려요</div><button class="btn-outline btn-sm" style="width:100%" onclick="resetHabitTimes()">기본 시간으로 복원</button></div>
         <div class="settings-card"><h3>홈트 영상 링크</h3><div id="workoutLinksC"></div><div class="settings-row"><input class="settings-input" id="newWorkoutLink" placeholder="유튜브 링크"><button class="btn btn-sm" onclick="addLink('workout')">추가</button></div></div>
         <div class="settings-card"><h3>영어 학습 링크</h3><div id="englishLinksC"></div><div class="settings-row"><input class="settings-input" id="newEnglishLink" placeholder="유튜브 링크"><button class="btn btn-sm" onclick="addLink('english')">추가</button></div></div>
         <div class="settings-card">
@@ -610,6 +613,7 @@ function addXP(n){
     save();
 }
 function resetLevel(){if(confirm('레벨과 XP를 모두 초기화할까요? (체크한 기록은 유지됩니다)')){D.level=1;D.xp=0;save();render();}}
+function resetHabitTimes(){if(!confirm('모든 습관의 시간을 기본값으로 되돌릴까요?'))return;D.habits.forEach(h=>{if(HABIT_TIME_FALLBACK[h.id])h.time=HABIT_TIME_FALLBACK[h.id];});save();render();}
 function addBook(){const v=document.getElementById('newBookInput').value.trim();if(!v)return;if(!D.books)D.books=[];D.books.push(v);document.getElementById('newBookInput').value='';save();renderSettings();}
 function removeBook(i){if(!D.books)return;D.books.splice(i,1);save();renderSettings();}
 function getStage(){let s=STAGES[0];for(const st of STAGES)if(D.level>=st.minLv)s=st;return s;}
