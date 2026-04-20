@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정원 성장 미리보기</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F7F5EF;color:#2E3A2E;padding:20px}
+        h1{text-align:center;font-size:22px;margin-bottom:8px}
+        .subtitle{text-align:center;font-size:13px;color:#7A8A7A;margin-bottom:30px}
+        .stages{max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+        .stage-card{border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(91,140,90,.12);background:#fff}
+        .stage-svg{width:100%;display:block}
+        .stage-info{padding:16px 20px}
+        .stage-title{font-size:16px;font-weight:700;margin-bottom:4px}
+        .stage-desc{font-size:13px;color:#7A8A7A}
+        .stage-level{font-size:12px;color:#5B8C5A;font-weight:600;margin-top:4px}
+    </style>
+</head>
+<body>
+<h1>🌱 정원 성장 미리보기</h1>
+<p class="subtitle">습관을 쌓으면 정원이 이렇게 변해요!</p>
+<div class="stages" id="stages"></div>
+
+<script>
+const STAGES=[
+    {minLv:1,title:'씨앗을 심은 땅',skyTop:'#F0DFC0',skyBot:'#F5E8D3',groundColor:'#8B7355',grassColor:'#A0AD8B',hillColor:'#B5C1A0'},
+    {minLv:3,title:'새싹이 돋는 정원',skyTop:'#B5D8F0',skyBot:'#E3F0FA',groundColor:'#6B8E50',grassColor:'#93BC72',hillColor:'#A8CC8A'},
+    {minLv:6,title:'초록 정원 + 울타리',skyTop:'#9ECCE5',skyBot:'#D0EAFA',groundColor:'#5D8A3C',grassColor:'#7CB342',hillColor:'#96C86A'},
+    {minLv:10,title:'꽃밭 + 작은 오두막',skyTop:'#82BDE0',skyBot:'#C0E0F5',groundColor:'#4E7A30',grassColor:'#6AAF40',hillColor:'#88C05A'},
+    {minLv:15,title:'예쁜 집 + 정원',skyTop:'#6CADD0',skyBot:'#B0D8F0',groundColor:'#3E6B20',grassColor:'#55A030',hillColor:'#78B848'},
+    {minLv:22,title:'작은 마을',skyTop:'#5A9DC0',skyBot:'#A5D6A7',groundColor:'#2E5A14',grassColor:'#43902A',hillColor:'#60A840'},
+    {minLv:30,title:'마법의 왕국',skyTop:'#1A1A40',skyBot:'#2D1B69',groundColor:'#1B4A18',grassColor:'#2E7D32',hillColor:'#3A8A38'},
+];
+
+// Soft blob shape generator
+function blob(cx,cy,rx,ry,seed,points=8){
+    let d='';
+    for(let i=0;i<=points;i++){
+        const a=(i/points)*Math.PI*2;
+        const n=((Math.sin(seed+i*2.7)*0.15)+(Math.cos(seed*0.7+i*1.3)*0.1));
+        const r1=rx*(1+n), r2=ry*(1+n);
+        const x=cx+Math.cos(a)*r1, y=cy+Math.sin(a)*r2;
+        if(i===0) d=`M${x.toFixed(1)},${y.toFixed(1)}`;
+        else d+=` Q${(cx+Math.cos(a-0.3)*r1*1.05).toFixed(1)},${(cy+Math.sin(a-0.3)*r2*1.05).toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`;
+    }
+    return d+'Z';
+}
+
+// Wavy line
+function wavyLine(x1,y1,x2,y2,amp,freq){
+    const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+    const steps=Math.max(4,Math.floor(len/20));
+    let d=`M${x1},${y1}`;
+    for(let i=1;i<=steps;i++){
+        const t=i/steps;
+        const mx=x1+dx*t, my=y1+dy*t;
+        const wave=Math.sin(t*Math.PI*freq)*amp;
+        const nx=-dy/len, ny=dx/len;
+        const cx1=x1+dx*(t-0.5/steps)+nx*wave*0.5;
+        const cy1=y1+dy*(t-0.5/steps)+ny*wave*0.5;
+        d+=` Q${cx1.toFixed(1)},${cy1.toFixed(1)} ${(mx+nx*wave*0.2).toFixed(1)},${(my+ny*wave*0.2).toFixed(1)}`;
+    }
+    return d;
+}
+
+// Organic hill
+function hill(cx,cy,rx,ry,seed){
+    const pts=12;
+    let d=`M${cx-rx},${cy}`;
+    for(let i=0;i<=pts;i++){
+        const t=i/pts;
+        const x=cx-rx+t*rx*2;
+        const h=Math.sin(t*Math.PI)*ry;
+        const wobble=Math.sin(seed+i*2.3)*ry*0.08+Math.cos(seed*1.5+i*1.7)*ry*0.05;
+        const y=cy-h-wobble;
+        if(i===0) continue;
+        const px=cx-rx+(t-0.5/pts)*rx*2;
+        d+=` Q${px.toFixed(1)},${(y-ry*0.05).toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`;
+    }
+    d+=` L${cx+rx},${cy+40} L${cx-rx},${cy+40} Z`;
+    return d;
+}
+
+// Cute character
+function drawChar(x,y,action,scale=1){
+    const s=scale;
+    let svg=`<g transform="translate(${x},${y}) scale(${s})">`;
+
+    // Bounce
+    if(action==='stand'||action==='king') svg+=`<animateTransform attributeName="transform" type="translate" values="${x} ${y};${x} ${y-2};${x} ${y}" dur="1.8s" repeatCount="indefinite"/>`;
+
+    // Shadow
+    svg+=`<ellipse cx="0" cy="3" rx="10" ry="3.5" fill="rgba(0,0,0,.08)"/>`;
+
+    // --- BODY ---
+    // Legs (rounded)
+    svg+=`<path d="M-4,-5 Q-5,0 -6,3" stroke="#A1887F" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+    svg+=`<path d="M4,-5 Q5,0 6,3" stroke="#A1887F" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+    // Shoes (blobby)
+    svg+=`<path d="${blob(-7,4,4.5,2.5,1)}" fill="#795548"/>`;
+    svg+=`<path d="${blob(7,4,4.5,2.5,2)}" fill="#795548"/>`;
+
+    // Body (soft blob overalls)
+    svg+=`<path d="${blob(0,-12,9,10,3,10)}" fill="#81C784"/>`;
+    svg+=`<path d="${blob(0,-12,7.5,8.5,3.5,10)}" fill="#93CC96"/>`;
+    // Strap
+    svg+=`<path d="M-4,-20 Q-3,-16 -4,-12" stroke="#66BB6A" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+    svg+=`<path d="M4,-20 Q3,-16 4,-12" stroke="#66BB6A" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+    // Pocket (rounded)
+    svg+=`<path d="${blob(0,-8,4,3,5)}" fill="#73B876" opacity=".6"/>`;
+
+    // Arms
+    if(action==='water'){
+        svg+=`<path d="M9,-16 Q16,-14 20,-12" stroke="#FFCC80" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+        svg+=`<path d="M-9,-16 Q-13,-12 -14,-8" stroke="#FFCC80" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+        // Watering can (organic shape)
+        svg+=`<g><animateTransform attributeName="transform" type="rotate" values="0 22 -12;-12 22 -12;0 22 -12" dur="2.5s" repeatCount="indefinite"/>
+            <path d="${blob(24,-14,8,5,7)}" fill="#90A4AE"/>
+            <path d="M30,-16 Q35,-20 37,-22" stroke="#78909C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <circle cx="37" cy="-23" r="2.5" fill="none" stroke="#78909C" stroke-width="1.5"/>
+            <path d="M18,-16 Q16,-20 18,-22" stroke="#78909C" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </g>`;
+    } else if(action==='dig'){
+        svg+=`<path d="M9,-16 Q14,-10 16,-4" stroke="#FFCC80" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+        svg+=`<path d="M-9,-16 Q-15,-12 -16,-6" stroke="#FFCC80" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+    } else if(action==='king'){
+        svg+=`<path d="M9,-16 Q16,-22 18,-26" stroke="#FFCC80" stroke-width="3" fill="none" stroke-linecap="round"><animate attributeName="d" values="M9,-16 Q16,-22 18,-26;M9,-16 Q16,-24 16,-28;M9,-16 Q16,-22 18,-26" dur="1.2s" repeatCount="indefinite"/></path>`;
+        svg+=`<path d="M-9,-16 Q-13,-12 -14,-8" stroke="#FFCC80" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+    } else {
+        svg+=`<path d="M9,-16 Q14,-10 13,-6" stroke="#FFCC80" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+        svg+=`<path d="M-9,-16 Q-14,-10 -13,-6" stroke="#FFCC80" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+    }
+
+    // Head (soft blob, not circle)
+    svg+=`<path d="${blob(0,-30,11,10.5,8,12)}" fill="#FFCC80"/>`;
+    // Blush
+    svg+=`<ellipse cx="-6" cy="-27" rx="3" ry="2" fill="rgba(255,140,140,.3)"/>`;
+    svg+=`<ellipse cx="6" cy="-27" rx="3" ry="2" fill="rgba(255,140,140,.3)"/>`;
+    // Eyes (big, cute)
+    svg+=`<ellipse cx="-4" cy="-31" rx="2.5" ry="3" fill="#2D2D2D"/>`;
+    svg+=`<ellipse cx="4" cy="-31" rx="2.5" ry="3" fill="#2D2D2D"/>`;
+    svg+=`<ellipse cx="-3.2" cy="-32" rx="1" ry="1.2" fill="#fff"/>`;
+    svg+=`<ellipse cx="4.8" cy="-32" rx="1" ry="1.2" fill="#fff"/>`;
+    // Mouth
+    svg+=`<path d="M-2,-27 Q0,-25 2,-27" fill="none" stroke="#C08060" stroke-width="1" stroke-linecap="round"/>`;
+
+    // Hair (soft, wavy)
+    svg+=`<path d="M-11,-33 Q-10,-42 -4,-41 Q0,-44 4,-41 Q10,-42 11,-33 Q12,-36 10,-38 Q6,-44 0,-45 Q-6,-44 -10,-38 Q-12,-36 -11,-33" fill="#6D4C41"/>`;
+
+    // Hat
+    if(action==='king'){
+        svg+=`<path d="M-8,-40 Q-6,-52 -3,-46 Q0,-54 3,-46 Q6,-52 8,-40" fill="#FFD54F" stroke="#FFAB00" stroke-width="0.5"/>`;
+        svg+=`<circle cx="-5" cy="-49" r="1.5" fill="#E57373"/>`;
+        svg+=`<circle cx="0" cy="-52" r="1.5" fill="#42A5F5"/>`;
+        svg+=`<circle cx="5" cy="-49" r="1.5" fill="#66BB6A"/>`;
+        svg+=`<ellipse cx="0" cy="-40" rx="10" ry="2.5" fill="#FFD54F"/>`;
+    } else {
+        // Straw hat (organic)
+        svg+=`<path d="${blob(0,-40,14,3.5,9,10)}" fill="#FFE0B2"/>`;
+        svg+=`<path d="${blob(0,-42,10,5,10,10)}" fill="#FFCC80"/>`;
+        svg+=`<path d="M-7,-43 Q0,-45 7,-43" fill="none" stroke="#C8A06A" stroke-width="0.7"/>`;
+    }
+
+    svg+=`</g>`;
+    return svg;
+}
+
+// Water drops
+function waterDrops(x,y){
+    let svg='';
+    for(let i=0;i<5;i++){
+        const dx=x+i*5-10+(Math.random()*4-2), delay=(i*0.25).toFixed(1);
+        svg+=`<path d="M${dx},${y} Q${dx-1.5},${y+4} ${dx},${y+6} Q${dx+1.5},${y+4} ${dx},${y}" fill="#90CAF9" opacity="0">
+            <animate attributeName="opacity" values=".7;0" dur="1.2s" begin="${delay}s" repeatCount="indefinite"/>
+            <animateTransform attributeName="transform" type="translate" values="0,0;${Math.random()*4-2},20" dur="1.2s" begin="${delay}s" repeatCount="indefinite"/>
+        </path>`;
+    }
+    return svg;
+}
+
+// Organic tree
+function tree(x,y,size,colors,seed){
+    const s=size;
+    let svg='';
+    // Trunk (curved)
+    svg+=`<path d="M${x-s*0.06},${y} Q${x-s*0.08},${y-s*0.3} ${x-s*0.02},${y-s*0.45} Q${x+s*0.02},${y-s*0.5} ${x+s*0.02},${y-s*0.45} Q${x+s*0.08},${y-s*0.3} ${x+s*0.06},${y}" fill="#8D6E63"/>`;
+    // Canopy blobs
+    svg+=`<path d="${blob(x,y-s*0.6,s*0.35,s*0.3,seed)}" fill="${colors[0]}"/>`;
+    svg+=`<path d="${blob(x-s*0.15,y-s*0.45,s*0.25,s*0.22,seed+1)}" fill="${colors[1]||colors[0]}" opacity=".9"/>`;
+    svg+=`<path d="${blob(x+s*0.18,y-s*0.48,s*0.22,s*0.2,seed+2)}" fill="${colors[1]||colors[0]}" opacity=".85"/>`;
+    // Highlight
+    svg+=`<path d="${blob(x-s*0.05,y-s*0.65,s*0.12,s*0.1,seed+3)}" fill="#fff" opacity=".12"/>`;
+    return svg;
+}
+
+// Organic flower
+function flower(x,y,h,color,seed){
+    let svg='';
+    // Stem (curved)
+    const sw=Math.sin(seed)*5;
+    svg+=`<path d="M${x},${y} Q${x+sw},${y-h*0.5} ${x+sw*0.3},${y-h}" stroke="#6AAF40" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+    // Leaf
+    const ly=y-h*0.35;
+    svg+=`<path d="M${x+sw*0.6},${ly} Q${x+sw*0.6+8},${ly-5} ${x+sw*0.6+12},${ly} Q${x+sw*0.6+8},${ly+3} ${x+sw*0.6},${ly}" fill="#7CB342" opacity=".8"/>`;
+    // Flower head
+    const fx=x+sw*0.3, fy=y-h;
+    const petals=5+Math.floor(seed%3);
+    for(let p=0;p<petals;p++){
+        const a=(p/petals)*Math.PI*2-Math.PI/2;
+        const pr=5+seed%3;
+        svg+=`<ellipse cx="${fx+Math.cos(a)*pr}" cy="${fy+Math.sin(a)*pr}" rx="${pr*0.7}" ry="${pr*0.5}" fill="${color}" opacity=".85" transform="rotate(${(a*180/Math.PI)+90},${fx+Math.cos(a)*pr},${fy+Math.sin(a)*pr})"/>`;
+    }
+    svg+=`<circle cx="${fx}" cy="${fy}" r="${3+seed%2}" fill="#FFE082"/>`;
+    return svg;
+}
+
+// Sprout
+function sprout(x,y,h,seed){
+    let svg='';
+    const sw=Math.sin(seed)*2;
+    svg+=`<path d="M${x},${y} Q${x+sw},${y-h*0.5} ${x+sw*0.5},${y-h}" stroke="#93CC96" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    const tx=x+sw*0.5, ty=y-h;
+    svg+=`<path d="M${tx},${ty} Q${tx-6},${ty-4} ${tx-2},${ty+2}" fill="#A5D6A7"/>`;
+    svg+=`<path d="M${tx},${ty} Q${tx+6},${ty-4} ${tx+2},${ty+2}" fill="#C8E6C9"/>`;
+    return svg;
+}
+
+// Seed mound
+function seedMound(x,y,seed){
+    let svg='';
+    svg+=`<path d="${blob(x,y+1,8,4,seed)}" fill="#A1887F" opacity=".5"/>`;
+    svg+=`<ellipse cx="${x}" cy="${y-1}" rx="3.5" ry="2.8" fill="#8D6E63"/>`;
+    svg+=`<ellipse cx="${x+1}" cy="${y-2}" rx="1.2" ry="0.8" fill="#BCAAA4" opacity=".6"/>`;
+    return svg;
+}
+
+// Organic cabin
+function cabin(x,y,w,h){
+    let svg='';
+    // Walls (slightly wobbly)
+    svg+=`<path d="M${x+2},${y+h} Q${x-1},${y+h} ${x},${y+2} Q${x+1},${y} ${x+w-1},${y} Q${x+w},${y+2} ${x+w+1},${y+h} Q${x+w-1},${y+h} ${x+2},${y+h}" fill="#C8A882"/>`;
+    svg+=`<path d="M${x+4},${y+h-2} Q${x+3},${y+4} ${x+w-3},${y+4} Q${x+w-4},${y+h-2} ${x+4},${y+h-2}" fill="#D4BC9E" opacity=".5"/>`;
+    // Roof (organic)
+    svg+=`<path d="M${x-10},${y+2} Q${x+w*0.3},${y-h*0.4} ${x+w*0.5},${y-h*0.5} Q${x+w*0.7},${y-h*0.4} ${x+w+10},${y+2}" fill="#8D6E63"/>`;
+    svg+=`<path d="M${x-6},${y+2} Q${x+w*0.3},${y-h*0.35} ${x+w*0.5},${y-h*0.43} Q${x+w*0.7},${y-h*0.35} ${x+w+6},${y+2}" fill="#A1887F"/>`;
+    // Door
+    svg+=`<path d="M${x+w*0.4},${y+h} Q${x+w*0.38},${y+h*0.5} ${x+w*0.5},${y+h*0.45} Q${x+w*0.62},${y+h*0.5} ${x+w*0.6},${y+h}" fill="#6D4C41"/>`;
+    svg+=`<circle cx="${x+w*0.56}" cy="${y+h*0.72}" r="1.5" fill="#FFD54F"/>`;
+    // Window
+    svg+=`<path d="${blob(x+w*0.2,y+h*0.35,6,5,11)}" fill="#FFF8E1"/>`;
+    svg+=`<path d="M${x+w*0.2},${y+h*0.3} L${x+w*0.2},${y+h*0.4}" stroke="#C8A882" stroke-width="1"/>`;
+    // Chimney
+    svg+=`<path d="M${x+w*0.7},${y-h*0.3} Q${x+w*0.69},${y-h*0.5} ${x+w*0.72},${y-h*0.52} L${x+w*0.8},${y-h*0.52} Q${x+w*0.81},${y-h*0.5} ${x+w*0.8},${y-h*0.3}" fill="#90A4AE"/>`;
+    return svg;
+}
+
+// Organic house
+function house(x,y,w,h){
+    let svg='';
+    // Wall
+    svg+=`<path d="M${x+3},${y+h} Q${x},${y+h} ${x+1},${y+3} Q${x+2},${y} ${x+w-2},${y} Q${x+w-1},${y+3} ${x+w},${y+h} Q${x+w-3},${y+h} ${x+3},${y+h}" fill="#FFF8E1"/>`;
+    svg+=`<path d="M${x+5},${y+h-2} Q${x+4},${y+4} ${x+w-4},${y+4} Q${x+w-5},${y+h-2} ${x+5},${y+h-2}" fill="#FFFDE7" opacity=".5"/>`;
+    // Roof
+    svg+=`<path d="M${x-14},${y+3} Q${x+w*0.3},${y-h*0.45} ${x+w*0.5},${y-h*0.55} Q${x+w*0.7},${y-h*0.45} ${x+w+14},${y+3}" fill="#E57373"/>`;
+    svg+=`<path d="M${x-10},${y+3} Q${x+w*0.3},${y-h*0.4} ${x+w*0.5},${y-h*0.48} Q${x+w*0.7},${y-h*0.4} ${x+w+10},${y+3}" fill="#EF9A9A"/>`;
+    // Door
+    svg+=`<path d="M${x+w*0.4},${y+h} Q${x+w*0.37},${y+h*0.45} ${x+w*0.5},${y+h*0.38} Q${x+w*0.63},${y+h*0.45} ${x+w*0.6},${y+h}" fill="#8D6E63"/>`;
+    svg+=`<circle cx="${x+w*0.56}" cy="${y+h*0.7}" r="2" fill="#FFD54F"/>`;
+    // Windows
+    for(let i=0;i<2;i++){
+        const wx=x+w*(0.15+i*0.55), wy=y+h*0.25;
+        svg+=`<path d="${blob(wx,wy,8,7,12+i)}" fill="#BBDEFB"/>`;
+        svg+=`<path d="M${wx},${wy-7} L${wx},${wy+7}" stroke="#fff" stroke-width="1.5" opacity=".6"/>`;
+        svg+=`<path d="M${wx-8},${wy} L${wx+8},${wy}" stroke="#fff" stroke-width="1.5" opacity=".6"/>`;
+        // Window frame top
+        svg+=`<path d="M${wx-9},${wy-6} Q${wx},${wy-10} ${wx+9},${wy-6}" fill="#EF9A9A" opacity=".7"/>`;
+    }
+    // Chimney
+    svg+=`<path d="M${x+w*0.72},${y-h*0.32} Q${x+w*0.71},${y-h*0.55} ${x+w*0.73},${y-h*0.57} Q${x+w*0.78},${y-h*0.58} ${x+w*0.82},${y-h*0.57} Q${x+w*0.83},${y-h*0.55} ${x+w*0.82},${y-h*0.32}" fill="#EF5350"/>`;
+    return svg;
+}
+
+// Castle
+function castle(x,y,w,h){
+    let svg='';
+    // Main tower
+    svg+=`<path d="M${x+w*0.3},${y+h} Q${x+w*0.28},${y} ${x+w*0.5},${y-h*0.05} Q${x+w*0.72},${y} ${x+w*0.7},${y+h}" fill="#E8EAF6"/>`;
+    // Side towers
+    svg+=`<path d="M${x},${y+h} Q${x-2},${y+h*0.2} ${x+w*0.12},${y+h*0.15} Q${x+w*0.25},${y+h*0.2} ${x+w*0.25},${y+h}" fill="#D1D4E8"/>`;
+    svg+=`<path d="M${x+w*0.75},${y+h} Q${x+w*0.75},${y+h*0.2} ${x+w*0.88},${y+h*0.15} Q${x+w+2},${y+h*0.2} ${x+w},${y+h}" fill="#D1D4E8"/>`;
+    // Tower roofs (pointy, organic)
+    svg+=`<path d="M${x+w*0.28},${y} Q${x+w*0.45},${y-h*0.3} ${x+w*0.5},${y-h*0.4} Q${x+w*0.55},${y-h*0.3} ${x+w*0.72},${y}" fill="#7C4DFF"/>`;
+    svg+=`<path d="M${x-2},${y+h*0.17} Q${x+w*0.1},${y-h*0.05} ${x+w*0.125},${y-h*0.12} Q${x+w*0.15},${y-h*0.05} ${x+w*0.27},${y+h*0.17}" fill="#9C7CFF"/>`;
+    svg+=`<path d="M${x+w*0.73},${y+h*0.17} Q${x+w*0.85},${y-h*0.05} ${x+w*0.875},${y-h*0.12} Q${x+w*0.9},${y-h*0.05} ${x+w+2},${y+h*0.17}" fill="#9C7CFF"/>`;
+    // Flag
+    svg+=`<line x1="${x+w*0.5}" y1="${y-h*0.4}" x2="${x+w*0.5}" y2="${y-h*0.58}" stroke="#6D4C41" stroke-width="1.5"/>`;
+    svg+=`<path d="M${x+w*0.5},${y-h*0.58} Q${x+w*0.5+10},${y-h*0.55} ${x+w*0.5+12},${y-h*0.53} Q${x+w*0.5+10},${y-h*0.5} ${x+w*0.5},${y-h*0.48}" fill="#FFD54F">
+        <animate attributeName="d" values="M${x+w*0.5},${y-h*0.58} Q${x+w*0.5+10},${y-h*0.55} ${x+w*0.5+12},${y-h*0.53} Q${x+w*0.5+10},${y-h*0.5} ${x+w*0.5},${y-h*0.48};M${x+w*0.5},${y-h*0.58} Q${x+w*0.5+8},${y-h*0.56} ${x+w*0.5+10},${y-h*0.53} Q${x+w*0.5+8},${y-h*0.51} ${x+w*0.5},${y-h*0.48};M${x+w*0.5},${y-h*0.58} Q${x+w*0.5+10},${y-h*0.55} ${x+w*0.5+12},${y-h*0.53} Q${x+w*0.5+10},${y-h*0.5} ${x+w*0.5},${y-h*0.48}" dur="2s" repeatCount="indefinite"/>
+    </path>`;
+    // Gate
+    svg+=`<path d="M${x+w*0.38},${y+h} Q${x+w*0.36},${y+h*0.65} ${x+w*0.5},${y+h*0.6} Q${x+w*0.64},${y+h*0.65} ${x+w*0.62},${y+h}" fill="#5D4037"/>`;
+    svg+=`<path d="M${x+w*0.39},${y+h} Q${x+w*0.38},${y+h*0.68} ${x+w*0.5},${y+h*0.63} Q${x+w*0.62},${y+h*0.68} ${x+w*0.61},${y+h}" fill="#795548"/>`;
+    // Windows
+    for(let i=0;i<3;i++){
+        const wy=y+h*(0.15+i*0.18);
+        svg+=`<ellipse cx="${x+w*0.43}" cy="${wy}" rx="3.5" ry="5" fill="#FFF8E1" opacity=".8"/>`;
+        svg+=`<ellipse cx="${x+w*0.57}" cy="${wy}" rx="3.5" ry="5" fill="#FFF8E1" opacity=".8"/>`;
+    }
+    return svg;
+}
+
+// Smoke puff
+function smoke(x,y){
+    let svg='';
+    for(let i=0;i<3;i++){
+        const d=i*1.2, r=3+i*1.5, ox=i*3;
+        svg+=`<circle cx="${x+ox}" cy="${y}" r="${r}" fill="#D7CCC8" opacity="0">
+            <animate attributeName="cy" values="${y};${y-25}" dur="${3+d}s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values=".4;0" dur="${3+d}s" repeatCount="indefinite"/>
+            <animate attributeName="r" values="${r};${r+8}" dur="${3+d}s" repeatCount="indefinite"/>
+        </circle>`;
+    }
+    return svg;
+}
+
+function renderStage(si){
+    const stage=STAGES[si];
+    const isNight=si===6;
+    const skyT=isNight?stage.skyTop:stage.skyTop;
+    const skyB=stage.skyBot;
+    const W=480,H=280,GY=200;
+
+    let svg=`<svg class="stage-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+    svg+=`<defs>
+        <linearGradient id="s${si}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${skyT}"/><stop offset="100%" stop-color="${skyB}"/></linearGradient>
+        <filter id="soft${si}"><feGaussianBlur stdDeviation="0.5"/></filter>
+    </defs>`;
+
+    // Sky
+    svg+=`<rect width="${W}" height="${H}" fill="url(#s${si})"/>`;
+
+    // Sun/Moon
+    if(isNight){
+        svg+=`<circle cx="380" cy="48" r="20" fill="#F0ECD0" opacity=".85"/>`;
+        svg+=`<circle cx="374" cy="44" r="16" fill="${skyT}" opacity=".9"/>`;
+        for(let i=0;i<25;i++){
+            const sx=Math.random()*460+10, sy=Math.random()*130+5, sr=Math.random()*1.5+.3;
+            svg+=`<circle cx="${sx}" cy="${sy}" r="${sr}" fill="#fff" opacity="${Math.random()*.4+.2}"><animate attributeName="opacity" values="${Math.random()*.3+.1};${Math.random()*.4+.5};${Math.random()*.3+.1}" dur="${1.5+Math.random()*2}s" repeatCount="indefinite"/></circle>`;
+        }
+        // Aurora
+        svg+=`<path d="M0,20 Q120,5 240,18 Q360,8 480,22" fill="none" stroke="#E040FB" stroke-width="8" opacity=".08"/>`;
+        svg+=`<path d="M0,28 Q120,15 240,25 Q360,12 480,30" fill="none" stroke="#448AFF" stroke-width="6" opacity=".06"/>`;
+    } else {
+        svg+=`<circle cx="385" cy="52" r="32" fill="#FFE082" opacity=".3"/>`;
+        svg+=`<circle cx="385" cy="52" r="22" fill="#FFE89A" opacity=".5"/>`;
+        svg+=`<circle cx="385" cy="52" r="14" fill="#FFF8E1" opacity=".7"/>`;
+        // Clouds (blobby)
+        svg+=`<path d="${blob(95,42,38,13,si*3)}" fill="#fff" opacity=".5"/>`;
+        svg+=`<path d="${blob(75,44,22,9,si*3+1)}" fill="#fff" opacity=".4"/>`;
+        if(si<5) svg+=`<path d="${blob(290,58,30,10,si*3+2)}" fill="#fff" opacity=".35"/>`;
+    }
+
+    // Back hills (organic)
+    svg+=`<path d="${hill(130,GY-2,200,45,si*2)}" fill="${stage.hillColor}" opacity=".35"/>`;
+    svg+=`<path d="${hill(370,GY,170,38,si*2+1)}" fill="${stage.hillColor}" opacity=".28"/>`;
+
+    // Ground
+    svg+=`<path d="${hill(240,GY-5,280,18,si*4)}" fill="${stage.grassColor}"/>`;
+    svg+=`<rect x="0" y="${GY+8}" width="${W}" height="80" fill="${stage.groundColor}"/>`;
+    svg+=`<path d="M0,${GY+8} Q120,${GY+5} 240,${GY+10} Q360,${GY+6} 480,${GY+8} L480,${H} L0,${H} Z" fill="${stage.groundColor}" opacity=".7"/>`;
+
+    // ===== CONTENT PER STAGE =====
+    if(si===0){
+        for(let i=0;i<6;i++) svg+=seedMound(60+i*75+Math.sin(i)*10, GY-2+Math.sin(i*1.3)*2, i);
+        svg+=drawChar(330,GY,'dig');
+    }
+    else if(si===1){
+        for(let i=0;i<9;i++) svg+=sprout(35+i*52+Math.sin(i)*8, GY-3+Math.sin(i*1.5)*2, 10+Math.random()*8, i*1.7);
+        svg+=drawChar(245,GY,'water');
+        svg+=waterDrops(278,GY-20);
+    }
+    else if(si===2){
+        // Fence (wavy top)
+        for(let i=0;i<13;i++){
+            const fx=15+i*38, fy=GY-3;
+            svg+=`<path d="M${fx-1.5},${fy+10} Q${fx-2},${fy} ${fx},${fy-10} Q${fx+2},${fy} ${fx+1.5},${fy+10}" fill="#C8A882"/>`;
+        }
+        svg+=`<path d="${wavyLine(10,GY-8,470,GY-8,2,3)}" stroke="#B09A78" stroke-width="2.5" fill="none"/>`;
+        svg+=`<path d="${wavyLine(10,GY+2,470,GY+2,2,2.5)}" stroke="#B09A78" stroke-width="2.5" fill="none"/>`;
+        // Plants with buds
+        for(let i=0;i<10;i++){
+            const sx=45+i*43, sy=GY-12;
+            svg+=sprout(sx,sy,18+Math.random()*10,i*2.1);
+            // Bud
+            const bx=sx+Math.sin(i*2.1)*2*0.5, by=sy-18-Math.random()*10;
+            svg+=`<ellipse cx="${bx}" cy="${by}" rx="3.5" ry="5" fill="#A5D6A7"/>`;
+        }
+        svg+=drawChar(390,GY,'water');
+        svg+=waterDrops(423,GY-20);
+    }
+    else if(si===3){
+        svg+=cabin(330,GY-52,65,52);
+        svg+=smoke(375,GY-75);
+        const colors=['#E57373','#F06292','#AB47BC','#42A5F5','#FFB74D','#FF8A65'];
+        for(let i=0;i<12;i++){
+            const fx=25+i*25;
+            if(fx>315&&fx<410)continue;
+            svg+=flower(fx,GY-4,20+Math.random()*12,colors[i%colors.length],i*1.3);
+        }
+        svg+=drawChar(300,GY,'stand');
+    }
+    else if(si===4){
+        svg+=house(185,GY-78,115,78);
+        svg+=smoke(280,GY-118);
+        // Stone path
+        for(let i=0;i<7;i++){
+            svg+=`<path d="${blob(260+i*12,GY+5+i*3,7,4,20+i)}" fill="#BCAAA4" opacity=".4"/>`;
+        }
+        // Flowers left
+        const colors=['#E57373','#F06292','#FFB74D','#AB47BC'];
+        for(let i=0;i<6;i++) svg+=flower(20+i*25,GY-4,18+Math.random()*10,colors[i%4],i*1.5+10);
+        // Trees right
+        svg+=tree(380,GY-2,55,['#4CAF50','#66BB6A'],30);
+        svg+=tree(440,GY,45,['#388E3C','#4CAF50'],31);
+        svg+=drawChar(145,GY,'water');
+        svg+=waterDrops(178,GY-20);
+    }
+    else if(si===5){
+        svg+=cabin(25,GY-42,55,42);
+        svg+=house(155,GY-72,100,72);
+        svg+=cabin(320,GY-48,58,48);
+        svg+=smoke(70,GY-60);
+        svg+=smoke(210,GY-108);
+        // Windmill
+        svg+=`<path d="M420,${GY} Q418,${GY-40} 421,${GY-45} Q424,${GY-40} 422,${GY}" fill="#C8A882"/>`;
+        svg+=`<g transform="translate(421,${GY-45})"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="5s" repeatCount="indefinite" additive="sum"/>
+            <path d="M0,0 L-3,-22 L3,-22 Z" fill="#90A4AE" opacity=".8"/><path d="M0,0 L22,-3 L22,3 Z" fill="#A0B4BE" opacity=".8"/><path d="M0,0 L3,22 L-3,22 Z" fill="#90A4AE" opacity=".8"/><path d="M0,0 L-22,3 L-22,-3 Z" fill="#A0B4BE" opacity=".8"/></g>`;
+        svg+=`<circle cx="421" cy="${GY-45}" r="3" fill="#78909C"/>`;
+        // Trees
+        svg+=tree(105,GY-5,40,['#388E3C','#4CAF50'],40);
+        // Flowers
+        for(let i=0;i<5;i++) svg+=flower(280+i*12,GY-2,12,['#E57373','#F06292','#FFB74D'][i%3],i+50);
+        // Path
+        svg+=`<path d="M0,${GY+12} Q120,${GY+8} 240,${GY+11} Q360,${GY+8} 480,${GY+10}" fill="none" stroke="#BCAAA4" stroke-width="10" opacity=".25" stroke-linecap="round"/>`;
+        svg+=drawChar(130,GY,'stand');
+        svg+=drawChar(270,GY,'water');
+        svg+=waterDrops(303,GY-20);
+    }
+    else if(si===6){
+        svg+=castle(175,GY-120,130,120);
+        // Magic trees
+        svg+=tree(50,GY-5,65,['#1B5E20','#2E7D32'],60);
+        svg+=tree(420,GY,58,['#1B5E20','#2E7D32'],61);
+        // Glowing fruits
+        for(let i=0;i<8;i++){
+            const gx=30+Math.random()*50, gy=GY-50+Math.random()*30;
+            svg+=`<circle cx="${gx}" cy="${gy}" r="2.5" fill="#FFD54F"><animate attributeName="opacity" values=".3;1;.3" dur="${1.5+Math.random()*1.5}s" repeatCount="indefinite"/></circle>`;
+        }
+        for(let i=0;i<8;i++){
+            const gx=400+Math.random()*50, gy=GY-45+Math.random()*28;
+            svg+=`<circle cx="${gx}" cy="${gy}" r="2.5" fill="#FFD54F"><animate attributeName="opacity" values=".3;1;.3" dur="${1.5+Math.random()*1.5}s" repeatCount="indefinite"/></circle>`;
+        }
+        // Fireflies
+        for(let i=0;i<18;i++){
+            const fx=Math.random()*440+20, fy=30+Math.random()*155;
+            svg+=`<circle cx="${fx}" cy="${fy}" r="${1.2+Math.random()*1.2}" fill="#FFFF8D"><animate attributeName="opacity" values=".1;.8;.1" dur="${1.2+Math.random()*2}s" repeatCount="indefinite"/></circle>`;
+        }
+        // Flowers (glowing)
+        const mColors=['#E57373','#F06292','#FFB74D','#AB47BC','#42A5F5','#FFD54F'];
+        for(let i=0;i<16;i++){
+            const fx=15+i*29;
+            if(fx>165&&fx<315) continue;
+            svg+=flower(fx,GY-3,14+Math.random()*8,mColors[i%6],i+70);
+        }
+        svg+=drawChar(240,GY+2,'king',1.1);
+    }
+
+    // Ground grass tufts
+    for(let i=0;i<20;i++){
+        const gx=Math.random()*460+10, gy=GY+Math.random()*6;
+        const gh=5+Math.random()*7;
+        const gs=Math.sin(i*3.7)*2;
+        svg+=`<path d="M${gx},${gy} Q${gx+gs},${gy-gh*0.6} ${gx+gs*0.5},${gy-gh}" stroke="${stage.grassColor}" stroke-width="1.5" fill="none" opacity=".4" stroke-linecap="round"/>`;
+    }
+
+    svg+=`</svg>`;
+    return svg;
+}
+
+// Render all
+const container=document.getElementById('stages');
+const descs=[
+    'Lv.1~2 · 삽으로 땅을 파고 씨앗을 심어요',
+    'Lv.3~5 · 물을 주니 새싹이 올라왔어요',
+    'Lv.6~9 · 울타리도 세우고 정원을 가꿔요',
+    'Lv.10~14 · 꽃이 피고 작은 오두막이 생겼어요',
+    'Lv.15~21 · 나만의 예쁜 집이 완성됐어요',
+    'Lv.22~29 · 이웃도 생기고 마을이 됐어요',
+    'Lv.30+ · 마법의 왕국! 전설이 된 당신의 정원'
+];
+for(let i=0;i<7;i++){
+    const card=document.createElement('div');
+    card.className='stage-card';
+    card.innerHTML=renderStage(i)+`<div class="stage-info"><div class="stage-title">${STAGES[i].title}</div><div class="stage-desc">${descs[i]}</div><div class="stage-level">Lv.${STAGES[i].minLv}${i<6?' ~ '+(STAGES[i+1].minLv-1):'+  👑'}</div></div>`;
+    container.appendChild(card);
+}
+</script>
+</body>
+</html>

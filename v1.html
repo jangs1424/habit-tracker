@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>180일 해빗 트래커</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #FAFBFE;
+            --card: #FFFFFF;
+            --primary: #6C63FF;
+            --primary-light: #EDE9FF;
+            --primary-dark: #4B42D4;
+            --success: #2DD4A0;
+            --success-light: #E6FBF5;
+            --warning: #FFB84D;
+            --warning-light: #FFF4E0;
+            --danger: #FF6B6B;
+            --text: #1E1E3A;
+            --text-sub: #8E8EA9;
+            --text-light: #B4B4CC;
+            --border: #EDEDF5;
+            --shadow: 0 4px 20px rgba(108, 99, 255, 0.06);
+            --shadow-lg: 0 8px 32px rgba(108, 99, 255, 0.1);
+            --radius: 20px;
+            --radius-sm: 14px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 90px;
+            overflow-x: hidden;
+        }
+
+        .container { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .header-left h2 { font-size: 20px; font-weight: 700; }
+        .header-left .date { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
+        .header-right .phase-badge {
+            padding: 6px 12px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* ===== CREATURE CARD ===== */
+        .creature-card {
+            background: linear-gradient(135deg, #6C63FF 0%, #A855F7 100%);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+        .creature-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 50%;
+        }
+        .creature-card::after {
+            content: '';
+            position: absolute;
+            bottom: -40%;
+            left: -20%;
+            width: 150px;
+            height: 150px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+        .creature-display {
+            position: relative;
+            z-index: 1;
+            font-size: 64px;
+            margin-bottom: 12px;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .creature-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            position: relative;
+            z-index: 1;
+        }
+        .creature-level {
+            font-size: 13px;
+            opacity: 0.85;
+            position: relative;
+            z-index: 1;
+        }
+        .xp-bar-wrap {
+            margin-top: 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 99px;
+            height: 8px;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        .xp-bar-fill {
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            border-radius: 99px;
+            transition: width 0.5s ease;
+        }
+        .xp-text {
+            font-size: 11px;
+            opacity: 0.75;
+            margin-top: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== TODAY RING ===== */
+        .today-section {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .ring-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 120px;
+        }
+        .progress-ring {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+        .progress-ring svg {
+            transform: rotate(-90deg);
+            width: 80px;
+            height: 80px;
+        }
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+        }
+        .progress-ring .bg { stroke: var(--border); }
+        .progress-ring .fill { stroke: var(--primary); transition: stroke-dashoffset 0.6s ease; }
+        .ring-pct {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .ring-label { font-size: 12px; color: var(--text-sub); margin-top: 8px; }
+
+        .streak-card {
+            flex: 1;
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+        }
+        .streak-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .streak-icon { font-size: 20px; }
+        .streak-info { flex: 1; }
+        .streak-label { font-size: 12px; color: var(--text-sub); }
+        .streak-value { font-size: 16px; font-weight: 700; }
+
+        /* ===== MINI CARDS ===== */
+        .mini-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .mini-card {
+            background: var(--card);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .mini-card:active { transform: scale(0.97); }
+        .mini-card-icon { font-size: 24px; margin-bottom: 8px; }
+        .mini-card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .mini-card-progress {
+            height: 4px;
+            background: var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .mini-card-progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.4s ease;
+        }
+        .mini-card-stat { font-size: 11px; color: var(--text-sub); margin-top: 6px; }
+
+        /* ===== PHASE INDICATOR ===== */
+        .phase-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .phase-icon { font-size: 28px; }
+        .phase-info { flex: 1; }
+        .phase-title { font-size: 14px; font-weight: 600; }
+        .phase-desc { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+        .phase-progress {
+            height: 4px;
+            background: var(--border);
+            border-radius: 99px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .phase-progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 99px;
+        }
+
+        /* ===== HABITS PAGE ===== */
+        .habit-day-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .habit-day-title { font-size: 18px; font-weight: 700; }
+        .habit-day-count { font-size: 13px; color: var(--text-sub); }
+
+        .habit-category { margin-bottom: 16px; }
+        .habit-category-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0 4px;
+            margin-bottom: 8px;
+        }
+        .habit-item {
+            background: var(--card);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            transition: transform 0.1s;
+        }
+        .habit-item:active { transform: scale(0.98); }
+        .habit-item.completed { opacity: 0.6; }
+        .habit-item.completed .habit-item-name { text-decoration: line-through; }
+
+        .habit-check {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2.5px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .habit-check.checked {
+            background: var(--success);
+            border-color: var(--success);
+            animation: checkPop 0.3s ease;
+        }
+        @keyframes checkPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .habit-check.checked::after { content: '✓'; color: white; font-size: 13px; font-weight: 700; }
+        .habit-item-info { flex: 1; }
+        .habit-item-name { font-size: 14px; font-weight: 500; }
+        .habit-item-detail { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+        .habit-item-link {
+            font-size: 11px;
+            color: var(--primary);
+            text-decoration: none;
+            margin-top: 2px;
+            display: inline-block;
+        }
+        .habit-input {
+            width: 52px;
+            padding: 4px 6px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            outline: none;
+        }
+        .habit-input:focus { border-color: var(--primary); }
+        .habit-input-unit { font-size: 11px; color: var(--text-sub); }
+
+        /* ===== JOURNAL ===== */
+        .journal-section { margin-top: 20px; }
+        .journal-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 18px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+        }
+        .journal-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .journal-textarea {
+            width: 100%;
+            min-height: 70px;
+            padding: 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+            line-height: 1.6;
+        }
+        .journal-textarea:focus { border-color: var(--primary); }
+
+        /* ===== INSIGHTS PAGE ===== */
+        .insight-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 14px;
+        }
+        .insight-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+        .insight-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .insight-row:last-child { border-bottom: none; }
+        .insight-label { font-size: 13px; color: var(--text-sub); }
+        .insight-value { font-size: 14px; font-weight: 600; }
+
+        .heatmap { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            background: var(--border);
+        }
+        .heatmap-cell.l1 { background: #E8E8FD; }
+        .heatmap-cell.l2 { background: #C4C1FF; }
+        .heatmap-cell.l3 { background: #8B85FF; }
+        .heatmap-cell.l4 { background: #6C63FF; }
+
+        .category-bars { display: flex; flex-direction: column; gap: 10px; }
+        .cat-bar-row { display: flex; align-items: center; gap: 10px; }
+        .cat-bar-label { font-size: 12px; width: 60px; color: var(--text-sub); }
+        .cat-bar-wrap { flex: 1; height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+        .cat-bar-fill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+        .cat-bar-pct { font-size: 12px; font-weight: 600; width: 36px; text-align: right; }
+
+        /* ===== SETTINGS ===== */
+        .settings-section { margin-bottom: 16px; }
+        .settings-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 18px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+        }
+        .settings-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+        .settings-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 8px;
+        }
+        .settings-input:focus { border-color: var(--primary); }
+        .link-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .link-item a { flex: 1; font-size: 12px; color: var(--primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .link-remove { color: var(--danger); font-size: 12px; cursor: pointer; }
+        .btn { padding: 10px 16px; border: none; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--primary); color: white; }
+        .btn:active { opacity: 0.85; }
+        .add-link-row { display: flex; gap: 8px; margin-top: 8px; }
+        .add-link-row input { flex: 1; }
+
+        /* ===== BOTTOM NAV ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 10px 0 26px;
+            z-index: 50;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            color: var(--text-light);
+            font-size: 10px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 22px; }
+
+        /* ===== PAGES ===== */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* ===== CELEBRATION ===== */
+        .celebration {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            pointer-events: none;
+        }
+        .celebration.show { display: flex; }
+        .celebration-emoji {
+            font-size: 80px;
+            animation: celebPop 1s ease forwards;
+        }
+        @keyframes celebPop {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ===== HOME PAGE ===== -->
+        <div id="page-home" class="page active">
+            <div class="header">
+                <div class="header-left">
+                    <h2 id="greeting">좋은 아침!</h2>
+                    <div class="date" id="currentDate"></div>
+                </div>
+                <div class="header-right">
+                    <span class="phase-badge" id="phaseBadge">1단계: 적응기</span>
+                </div>
+            </div>
+
+            <!-- Creature -->
+            <div class="creature-card">
+                <div class="creature-display" id="creatureEmoji">🥚</div>
+                <div class="creature-name" id="creatureName">이름 없는 먼지</div>
+                <div class="creature-level" id="creatureLevel">Lv.1 — 갓 태어난 존재</div>
+                <div class="xp-bar-wrap">
+                    <div class="xp-bar-fill" id="xpBar" style="width:0%"></div>
+                </div>
+                <div class="xp-text" id="xpText">0 / 100 XP</div>
+            </div>
+
+            <!-- Today Ring + Streak -->
+            <div class="today-section">
+                <div class="ring-card">
+                    <div class="progress-ring">
+                        <svg viewBox="0 0 80 80">
+                            <circle class="bg" cx="40" cy="40" r="34"/>
+                            <circle class="fill" id="progressCircle" cx="40" cy="40" r="34"
+                                stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+                        </svg>
+                        <div class="ring-pct" id="ringPct">0%</div>
+                    </div>
+                    <div class="ring-label">오늘 달성률</div>
+                </div>
+                <div class="streak-card">
+                    <div class="streak-item">
+                        <span class="streak-icon">🔥</span>
+                        <div class="streak-info">
+                            <div class="streak-label">연속 달성</div>
+                            <div class="streak-value" id="streakDays">0일</div>
+                        </div>
+                    </div>
+                    <div class="streak-item">
+                        <span class="streak-icon">📅</span>
+                        <div class="streak-info">
+                            <div class="streak-label">진행일</div>
+                            <div class="streak-value" id="dayCountHome">Day 1</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini Cards -->
+            <div class="mini-cards" id="miniCards"></div>
+
+            <!-- Phase -->
+            <div class="phase-card" id="phaseCard"></div>
+        </div>
+
+        <!-- ===== HABITS PAGE ===== -->
+        <div id="page-habits" class="page">
+            <div class="habit-day-header">
+                <div class="habit-day-title" id="habitDayTitle">월요일</div>
+                <div class="habit-day-count" id="habitDayCount">0/0</div>
+            </div>
+            <div id="habitList"></div>
+
+            <div class="journal-section">
+                <div class="journal-card">
+                    <h3>📝 오늘 할 일</h3>
+                    <textarea class="journal-textarea" id="todoInput" placeholder="오늘 집중할 것들..."></textarea>
+                </div>
+                <div class="journal-card">
+                    <h3>🙏 감사일기</h3>
+                    <textarea class="journal-textarea" id="gratitudeInput" placeholder="오늘 감사한 것 3가지..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== INSIGHTS PAGE ===== -->
+        <div id="page-insights" class="page">
+            <h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">인사이트</h2>
+
+            <div class="insight-card">
+                <h3>이번 주 리포트</h3>
+                <div id="weeklyReport"></div>
+            </div>
+
+            <div class="insight-card">
+                <h3>카테고리별 달성률</h3>
+                <div class="category-bars" id="categoryBars"></div>
+            </div>
+
+            <div class="insight-card">
+                <h3>180일 히트맵</h3>
+                <div class="heatmap" id="heatmap"></div>
+            </div>
+
+            <div class="insight-card">
+                <h3>습관별 스트릭</h3>
+                <div id="habitStreaks"></div>
+            </div>
+        </div>
+
+        <!-- ===== SETTINGS PAGE ===== -->
+        <div id="page-settings" class="page">
+            <h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">설정</h2>
+
+            <div class="settings-card">
+                <h3>챌린지 시작일</h3>
+                <input type="date" class="settings-input" id="startDateInput" onchange="saveStartDate()">
+            </div>
+
+            <div class="settings-card">
+                <h3>크리처 이름</h3>
+                <input type="text" class="settings-input" id="creatureNameInput" placeholder="이름을 지어주세요" onchange="saveCreatureName()">
+            </div>
+
+            <div class="settings-card">
+                <h3>현재 읽는 책</h3>
+                <input type="text" class="settings-input" id="bookInput" placeholder="책 제목" onchange="saveBook()">
+            </div>
+
+            <div class="settings-card">
+                <h3>홈트 영상 링크</h3>
+                <div id="workoutLinksContainer"></div>
+                <div class="add-link-row">
+                    <input class="settings-input" id="newWorkoutLink" placeholder="유튜브 링크">
+                    <button class="btn" onclick="addLink('workout')">추가</button>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h3>영어 학습 링크</h3>
+                <div id="englishLinksContainer"></div>
+                <div class="add-link-row">
+                    <input class="settings-input" id="newEnglishLink" placeholder="유튜브 링크">
+                    <button class="btn" onclick="addLink('english')">추가</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration -->
+    <div class="celebration" id="celebration">
+        <div class="celebration-emoji" id="celebEmoji">🎉</div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchPage('home', this)">
+            <span class="nav-icon">🏠</span><span>홈</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('habits', this)">
+            <span class="nav-icon">✓</span><span>습관</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('insights', this)">
+            <span class="nav-icon">📊</span><span>인사이트</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('settings', this)">
+            <span class="nav-icon">⚙</span><span>설정</span>
+        </div>
+    </div>
+
+    <script>
+    // ============ HABITS DATA ============
+    const HABITS_BY_DAY = {
+        1: [
+            { id: 'meditation', name: '명상', cat: '마인드', detail: '5분' },
+            { id: 'workout', name: '홈트', cat: '몸', detail: '자세교정 + 전신', hasLink: true },
+            { id: 'english-shadow', name: '영어 쉐도잉', cat: '스킬', detail: '투브로크걸스' },
+            { id: 'japanese', name: '듀오링고 일본어', cat: '스킬', detail: '5~10분' },
+            { id: 'marketing', name: '마케팅 아티클', cat: '성장', detail: '1개 읽기' },
+            { id: 'reels', name: '릴스 기획/소재', cat: '콘텐츠' },
+            { id: 'income', name: '쇼핑영상 작업', cat: '수익' },
+            { id: 'work-block', name: '업무 블록', cat: '생활', detail: '12:00~20:00' },
+            { id: 'morning', name: '9시 기상', cat: '생활' },
+            { id: 'diet', name: '식단 관리', cat: '몸' },
+            { id: 'laundry', name: '빨래', cat: '집안일' },
+        ],
+        2: [
+            { id: 'meditation', name: '명상', cat: '마인드', detail: '5분' },
+            { id: 'running', name: '러닝', cat: '몸', hasInput: true, unit: 'km' },
+            { id: 'english-grammar', name: '영어 문법', cat: '스킬', detail: '', hasProgress: true },
+            { id: 'japanese', name: '듀오링고 일본어', cat: '스킬', detail: '5~10분' },
+            { id: 'marketing', name: '마케팅 아티클', cat: '성장', detail: '1개 읽기' },
+            { id: 'reels', name: '릴스 촬영', cat: '콘텐츠' },
+            { id: 'income', name: '스레드 운영', cat: '수익' },
+            { id: 'reading', name: '독서', cat: '성장', detail: '30분' },
+            { id: 'work-block', name: '업무 블록', cat: '생활', detail: '12:00~20:00' },
+            { id: 'morning', name: '9시 기상', cat: '생활' },
+            { id: 'diet', name: '식단 관리', cat: '몸' },
+        ],
+        3: [
+            { id: 'meditation', name: '명상', cat: '마인드', detail: '5분' },
+            { id: 'workout', name: '홈트', cat: '몸', detail: '자세교정 + 전신', hasLink: true },
+            { id: 'english-shadow', name: '영어 쉐도잉', cat: '스킬', detail: '투브로크걸스' },
+            { id: 'japanese', name: '듀오링고 일본어', cat: '스킬', detail: '5~10분' },
+            { id: 'marketing', name: '마케팅 아티클', cat: '성장', detail: '1개 읽기' },
+            { id: 'reels', name: '릴스 편집', cat: '콘텐츠' },
+            { id: 'income', name: '쇼핑영상 작업', cat: '수익' },
+            { id: 'planning', name: '기획 연습', cat: '성장', detail: '레퍼런스 분석' },
+            { id: 'work-block', name: '업무 블록', cat: '생활', detail: '12:00~20:00' },
+            { id: 'morning', name: '9시 기상', cat: '생활' },
+            { id: 'diet', name: '식단 관리', cat: '몸' },
+            { id: 'cleaning', name: '청소', cat: '집안일' },
+        ],
+        4: [
+            { id: 'meditation', name: '명상', cat: '마인드', detail: '5분' },
+            { id: 'running', name: '러닝', cat: '몸', hasInput: true, unit: 'km' },
+            { id: 'english-grammar', name: '영어 문법', cat: '스킬', detail: '', hasProgress: true },
+            { id: 'japanese', name: '듀오링고 일본어', cat: '스킬', detail: '5~10분' },
+            { id: 'marketing', name: '마케팅 아티클', cat: '성장', detail: '1개 읽기' },
+            { id: 'reels', name: '릴스 기획/소재', cat: '콘텐츠' },
+            { id: 'income', name: '스레드 운영', cat: '수익' },
+            { id: 'reading', name: '독서', cat: '성장', detail: '30분' },
+            { id: 'work-block', name: '업무 블록', cat: '생활', detail: '12:00~20:00' },
+            { id: 'morning', name: '9시 기상', cat: '생활' },
+            { id: 'diet', name: '식단 관리', cat: '몸' },
+        ],
+        5: [
+            { id: 'meditation', name: '명상', cat: '마인드', detail: '5분' },
+            { id: 'workout', name: '홈트', cat: '몸', detail: '자세교정 + 전신', hasLink: true },
+            { id: 'english-shadow', name: '영어 쉐도잉', cat: '스킬', detail: '투브로크걸스' },
+            { id: 'japanese', name: '듀오링고 일본어', cat: '스킬', detail: '5~10분' },
+            { id: 'marketing', name: '마케팅 아티클', cat: '성장', detail: '1개 읽기' },
+            { id: 'reels', name: '릴스 촬영/편집', cat: '콘텐츠' },
+            { id: 'income', name: '쿠팡 정리', cat: '수익' },
+            { id: 'work-block', name: '업무 블록', cat: '생활', detail: '12:00~20:00' },
+            { id: 'morning', name: '9시 기상', cat: '생활' },
+            { id: 'diet', name: '식단 관리', cat: '몸' },
+            { id: 'organize', name: '정리 + 장보기', cat: '집안일' },
+        ],
+        6: [
+            { id: 'free-workout', name: '자유 운동', cat: '몸', detail: '산책/스포츠' },
+            { id: 'reading', name: '독서', cat: '성장', detail: '여유롭게' },
+            { id: 'hobby', name: '취미 탐색', cat: '라이프' },
+        ],
+        0: [
+            { id: 'weekly-review', name: '다음 주 훑어보기', cat: '생활', detail: '5분' },
+        ],
+    };
+
+    const CATEGORIES = ['몸', '스킬', '콘텐츠', '수익', '마인드', '성장'];
+    const CAT_COLORS = { '몸':'#EF4444', '스킬':'#3B82F6', '콘텐츠':'#EC4899', '수익':'#10B981', '마인드':'#8B5CF6', '성장':'#F59E0B', '생활':'#6B7280', '집안일':'#78716C', '라이프':'#06B6D4' };
+
+    const CREATURE_STAGES = [
+        { emoji: '🌫️', name: '먼지', title: '갓 태어난 존재', minLv: 1 },
+        { emoji: '🥚', name: '알', title: '무언가 될 준비', minLv: 3 },
+        { emoji: '🐣', name: '부화', title: '세상에 나오는 중', minLv: 6 },
+        { emoji: '🐥', name: '아기', title: '호기심 가득', minLv: 10 },
+        { emoji: '🐦', name: '성장', title: '날개를 펼치는 중', minLv: 15 },
+        { emoji: '🦅', name: '비상', title: '하늘을 나는 자', minLv: 22 },
+        { emoji: '🐉', name: '완전체', title: '전설의 존재', minLv: 30 },
+    ];
+
+    const PHASES = [
+        { name: '적응기', icon: '🌱', desc: '습관의 씨앗을 심는 시기', weeks: [1,2] },
+        { name: '형성기', icon: '🌿', desc: '뿌리를 내리는 시기', weeks: [3,4] },
+        { name: '가속기', icon: '🌳', desc: '성장이 눈에 보이는 시기', weeks: [5,6,7,8] },
+        { name: '확장기', icon: '🌺', desc: '가지를 뻗어가는 시기', weeks: [9,10,11,12] },
+        { name: '도약기', icon: '🚀', desc: '한계를 넘어서는 시기', weeks: [13,14,15,16,17,18] },
+        { name: '완성기', icon: '⭐', desc: '새로운 나를 만나는 시기', weeks: [19,20,21,22,23,24,25,26] },
+    ];
+
+    // ============ STATE ============
+    let data = loadData();
+    function loadData() {
+        const s = localStorage.getItem('habit180v2');
+        if (s) return JSON.parse(s);
+        return { startDate: new Date().toISOString().split('T')[0], habits: {}, journals: {}, links: { workout: [], english: [] }, book: '', xp: 0, level: 1, creatureName: '', englishProgress: 0, running: {} };
+    }
+    function save() { localStorage.setItem('habit180v2', JSON.stringify(data)); }
+    function today() { return new Date().toISOString().split('T')[0]; }
+    function dayOfWeek() { return new Date().getDay(); }
+    function dayCount() {
+        const s = new Date(data.startDate), t = new Date(today());
+        return Math.max(1, Math.floor((t - s) / 86400000) + 1);
+    }
+    function weekCount() { return Math.ceil(dayCount() / 7); }
+
+    // ============ XP & LEVEL ============
+    function xpForLevel(lv) { return 50 + (lv - 1) * 30; }
+    function addXP(amount) {
+        data.xp += amount;
+        while (data.xp >= xpForLevel(data.level)) {
+            data.xp -= xpForLevel(data.level);
+            data.level++;
+            celebrate('🎉');
+        }
+        save();
+    }
+    function getCreatureStage() {
+        let stage = CREATURE_STAGES[0];
+        for (const s of CREATURE_STAGES) { if (data.level >= s.minLv) stage = s; }
+        return stage;
+    }
+    function getPhase() {
+        const w = weekCount();
+        for (const p of PHASES) { if (p.weeks.includes(w)) return p; }
+        return PHASES[PHASES.length - 1];
+    }
+
+    // ============ RENDER ============
+    function render() {
+        renderHome();
+        renderHabits();
+        renderInsights();
+        renderSettings();
+    }
+
+    function renderHome() {
+        // Date & greeting
+        const now = new Date();
+        const h = now.getHours();
+        const greet = h < 12 ? '좋은 아침!' : h < 18 ? '파이팅!' : '오늘도 수고했어!';
+        document.getElementById('greeting').textContent = greet;
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('ko-KR', { month:'long', day:'numeric', weekday:'short' });
+
+        // Phase
+        const phase = getPhase();
+        document.getElementById('phaseBadge').textContent = phase.name;
+
+        // Creature
+        const stage = getCreatureStage();
+        document.getElementById('creatureEmoji').textContent = stage.emoji;
+        document.getElementById('creatureName').textContent = data.creatureName || stage.name;
+        document.getElementById('creatureLevel').textContent = `Lv.${data.level} — ${stage.title}`;
+        const xpNeeded = xpForLevel(data.level);
+        document.getElementById('xpBar').style.width = (data.xp / xpNeeded * 100) + '%';
+        document.getElementById('xpText').textContent = `${data.xp} / ${xpNeeded} XP`;
+
+        // Ring
+        const habits = HABITS_BY_DAY[dayOfWeek()] || [];
+        const todayData = data.habits[today()] || {};
+        const done = habits.filter(h => todayData[h.id]).length;
+        const total = habits.length;
+        const pct = total > 0 ? Math.round(done / total * 100) : 0;
+        const circumference = 213.6;
+        document.getElementById('progressCircle').style.strokeDashoffset = circumference - (circumference * pct / 100);
+        document.getElementById('ringPct').textContent = pct + '%';
+
+        // Streak
+        document.getElementById('streakDays').textContent = calcOverallStreak() + '일';
+        document.getElementById('dayCountHome').textContent = `Day ${dayCount()}`;
+
+        // Mini cards
+        renderMiniCards(todayData, habits);
+
+        // Phase card
+        const phaseEl = document.getElementById('phaseCard');
+        const w = weekCount();
+        const phaseWeeks = phase.weeks;
+        const phaseProgress = ((w - phaseWeeks[0]) / phaseWeeks.length * 100);
+        phaseEl.innerHTML = `
+            <div class="phase-icon">${phase.icon}</div>
+            <div class="phase-info">
+                <div class="phase-title">${phase.name}</div>
+                <div class="phase-desc">${phase.desc}</div>
+                <div class="phase-progress"><div class="phase-progress-fill" style="width:${Math.min(100, phaseProgress)}%"></div></div>
+            </div>
+        `;
+    }
+
+    function renderMiniCards(todayData, habits) {
+        const cards = document.getElementById('miniCards');
+        const catData = {};
+        CATEGORIES.forEach(c => { catData[c] = { total: 0, done: 0 }; });
+        habits.forEach(h => {
+            if (catData[h.cat]) {
+                catData[h.cat].total++;
+                if (todayData[h.id]) catData[h.cat].done++;
+            }
+        });
+
+        const icons = { '몸':'💪', '스킬':'📚', '콘텐츠':'🎬', '수익':'💰', '마인드':'🧘', '성장':'🌱' };
+        cards.innerHTML = CATEGORIES.map(cat => {
+            const d = catData[cat];
+            const pct = d.total > 0 ? Math.round(d.done / d.total * 100) : 0;
+            return `
+                <div class="mini-card">
+                    <div class="mini-card-icon">${icons[cat] || '✓'}</div>
+                    <div class="mini-card-title">${cat}</div>
+                    <div class="mini-card-progress">
+                        <div class="mini-card-progress-fill" style="width:${pct}%;background:${CAT_COLORS[cat]}"></div>
+                    </div>
+                    <div class="mini-card-stat">${d.done}/${d.total} 완료</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderHabits() {
+        const dow = dayOfWeek();
+        const days = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+        const habits = HABITS_BY_DAY[dow] || [];
+        const td = today();
+        if (!data.habits[td]) data.habits[td] = {};
+        const todayData = data.habits[td];
+
+        const done = habits.filter(h => todayData[h.id]).length;
+        document.getElementById('habitDayTitle').textContent = days[dow];
+        document.getElementById('habitDayCount').textContent = `${done}/${habits.length}`;
+
+        // Group
+        const grouped = {};
+        habits.forEach(h => { if (!grouped[h.cat]) grouped[h.cat] = []; grouped[h.cat].push(h); });
+
+        let html = '';
+        Object.entries(grouped).forEach(([cat, items]) => {
+            html += `<div class="habit-category"><div class="habit-category-title" style="color:${CAT_COLORS[cat]}">${cat}</div>`;
+            items.forEach(h => {
+                const checked = todayData[h.id] || false;
+                html += `
+                    <div class="habit-item ${checked ? 'completed' : ''}">
+                        <div class="habit-check ${checked ? 'checked' : ''}" onclick="toggleHabit('${h.id}')"></div>
+                        <div class="habit-item-info">
+                            <div class="habit-item-name">${h.name}</div>
+                            ${h.detail ? `<div class="habit-item-detail">${h.detail}</div>` : ''}
+                            ${h.hasLink && data.links.workout.length ? `<a class="habit-item-link" href="${data.links.workout[0]}" target="_blank">영상 바로가기 →</a>` : ''}
+                            ${h.hasProgress ? `<div class="habit-item-detail">${data.englishProgress}/30강 완료</div>` : ''}
+                        </div>
+                        ${h.hasInput ? `<div><input class="habit-input" type="number" step="0.1" value="${data.running[td]||''}" onchange="saveRunning(this.value)" placeholder="0"><span class="habit-input-unit">${h.unit}</span></div>` : ''}
+                    </div>
+                `;
+            });
+            html += '</div>';
+        });
+        document.getElementById('habitList').innerHTML = html;
+
+        // Journal
+        if (!data.journals[td]) data.journals[td] = {};
+        document.getElementById('todoInput').value = data.journals[td].todo || '';
+        document.getElementById('gratitudeInput').value = data.journals[td].gratitude || '';
+    }
+
+    function renderInsights() {
+        // Weekly report
+        const report = document.getElementById('weeklyReport');
+        const weekData = getWeekData();
+        report.innerHTML = `
+            <div class="insight-row"><span class="insight-label">이번 주 평균 달성률</span><span class="insight-value">${weekData.avgPct}%</span></div>
+            <div class="insight-row"><span class="insight-label">가장 잘한 날</span><span class="insight-value">${weekData.bestDay}</span></div>
+            <div class="insight-row"><span class="insight-label">총 획득 XP</span><span class="insight-value">${weekData.weekXP} XP</span></div>
+            <div class="insight-row"><span class="insight-label">현재 레벨</span><span class="insight-value">Lv.${data.level}</span></div>
+        `;
+
+        // Category bars
+        const bars = document.getElementById('categoryBars');
+        const catStats = getCategoryStats();
+        bars.innerHTML = CATEGORIES.map(cat => `
+            <div class="cat-bar-row">
+                <div class="cat-bar-label">${cat}</div>
+                <div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${catStats[cat]||0}%;background:${CAT_COLORS[cat]}"></div></div>
+                <div class="cat-bar-pct">${catStats[cat]||0}%</div>
+            </div>
+        `).join('');
+
+        // Heatmap
+        const heatmap = document.getElementById('heatmap');
+        let heatHtml = '';
+        const start = new Date(data.startDate);
+        for (let i = 0; i < Math.min(dayCount(), 180); i++) {
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+            const ds = d.toISOString().split('T')[0];
+            const comp = getCompletionForDate(ds);
+            let lvl = '';
+            if (comp > 0.8) lvl = 'l4';
+            else if (comp > 0.6) lvl = 'l3';
+            else if (comp > 0.3) lvl = 'l2';
+            else if (comp > 0) lvl = 'l1';
+            heatHtml += `<div class="heatmap-cell ${lvl}"></div>`;
+        }
+        heatmap.innerHTML = heatHtml;
+
+        // Habit streaks
+        const streaks = document.getElementById('habitStreaks');
+        const allIds = ['meditation','workout','running','english-shadow','english-grammar','japanese','marketing','reels','income','reading','morning','diet','work-block'];
+        const names = { meditation:'명상', workout:'홈트', running:'러닝', 'english-shadow':'영어 쉐도잉', 'english-grammar':'영어 문법', japanese:'일본어', marketing:'마케팅', reels:'릴스', income:'수익활동', reading:'독서', morning:'기상', diet:'식단', 'work-block':'업무블록' };
+        streaks.innerHTML = allIds.map(id => `
+            <div class="insight-row"><span class="insight-label">${names[id]||id}</span><span class="insight-value">${calcStreak(id)}일 연속</span></div>
+        `).join('');
+    }
+
+    function renderSettings() {
+        document.getElementById('startDateInput').value = data.startDate;
+        document.getElementById('creatureNameInput').value = data.creatureName || '';
+        document.getElementById('bookInput').value = data.book || '';
+
+        ['workout','english'].forEach(type => {
+            const container = document.getElementById(type + 'LinksContainer');
+            container.innerHTML = (data.links[type]||[]).map((url,i) => `
+                <div class="link-item"><a href="${url}" target="_blank">${url}</a><span class="link-remove" onclick="removeLink('${type}',${i})">삭제</span></div>
+            `).join('');
+        });
+    }
+
+    // ============ ACTIONS ============
+    function toggleHabit(id) {
+        const td = today();
+        if (!data.habits[td]) data.habits[td] = {};
+        const wasChecked = data.habits[td][id];
+        data.habits[td][id] = !wasChecked;
+
+        if (!wasChecked) {
+            addXP(10);
+            if (id === 'english-grammar') {
+                data.englishProgress = Math.min(30, (data.englishProgress||0) + 1);
+            }
+        } else {
+            data.xp = Math.max(0, data.xp - 10);
+        }
+
+        save();
+        render();
+    }
+
+    function saveRunning(val) {
+        const td = today();
+        data.running[td] = parseFloat(val) || 0;
+        if (data.running[td] > 0) {
+            if (!data.habits[td]) data.habits[td] = {};
+            data.habits[td]['running'] = true;
+            addXP(10);
+        }
+        save();
+        render();
+    }
+
+    // Journals
+    document.addEventListener('input', e => {
+        const td = today();
+        if (!data.journals[td]) data.journals[td] = {};
+        if (e.target.id === 'todoInput') { data.journals[td].todo = e.target.value; save(); }
+        if (e.target.id === 'gratitudeInput') { data.journals[td].gratitude = e.target.value; save(); }
+    });
+
+    function addLink(type) {
+        const input = document.getElementById(type === 'workout' ? 'newWorkoutLink' : 'newEnglishLink');
+        if (input.value.trim()) { data.links[type].push(input.value.trim()); input.value = ''; save(); renderSettings(); }
+    }
+    function removeLink(type, i) { data.links[type].splice(i, 1); save(); renderSettings(); }
+    function saveStartDate() { data.startDate = document.getElementById('startDateInput').value; save(); render(); }
+    function saveCreatureName() { data.creatureName = document.getElementById('creatureNameInput').value; save(); render(); }
+    function saveBook() { data.book = document.getElementById('bookInput').value; save(); }
+
+    // ============ HELPERS ============
+    function getCompletionForDate(ds) {
+        const d = data.habits[ds];
+        if (!d) return 0;
+        const date = new Date(ds);
+        const habits = HABITS_BY_DAY[date.getDay()] || [];
+        if (!habits.length) return 0;
+        return habits.filter(h => d[h.id]).length / habits.length;
+    }
+
+    function calcOverallStreak() {
+        let streak = 0;
+        let d = new Date();
+        for (let i = 0; i < 180; i++) {
+            const ds = d.toISOString().split('T')[0];
+            const comp = getCompletionForDate(ds);
+            if (comp >= 0.7) streak++;
+            else if (i > 0) break;
+            d.setDate(d.getDate() - 1);
+        }
+        return streak;
+    }
+
+    function calcStreak(habitId) {
+        let streak = 0;
+        let d = new Date();
+        for (let i = 0; i < 180; i++) {
+            const ds = d.toISOString().split('T')[0];
+            const dow = d.getDay();
+            const habits = HABITS_BY_DAY[dow] || [];
+            if (habits.some(h => h.id === habitId)) {
+                if (data.habits[ds] && data.habits[ds][habitId]) streak++;
+                else break;
+            }
+            d.setDate(d.getDate() - 1);
+        }
+        return streak;
+    }
+
+    function getWeekData() {
+        const days = ['일','월','화','수','목','금','토'];
+        let totalPct = 0, count = 0, bestPct = 0, bestDay = '-', weekXP = 0;
+        const d = new Date();
+        const startOfWeek = new Date(d);
+        startOfWeek.setDate(d.getDate() - d.getDay() + 1);
+
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(startOfWeek);
+            date.setDate(startOfWeek.getDate() + i);
+            const ds = date.toISOString().split('T')[0];
+            if (ds > today()) break;
+            const comp = getCompletionForDate(ds);
+            totalPct += comp;
+            count++;
+            if (comp > bestPct) { bestPct = comp; bestDay = days[date.getDay()]; }
+
+            const habits = HABITS_BY_DAY[date.getDay()] || [];
+            const dayData = data.habits[ds] || {};
+            weekXP += habits.filter(h => dayData[h.id]).length * 10;
+        }
+        return { avgPct: count > 0 ? Math.round(totalPct / count * 100) : 0, bestDay, weekXP };
+    }
+
+    function getCategoryStats() {
+        const stats = {};
+        const d = new Date();
+        const startOfWeek = new Date(d);
+        startOfWeek.setDate(d.getDate() - d.getDay() + 1);
+
+        CATEGORIES.forEach(c => { stats[c] = { total: 0, done: 0 }; });
+
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(startOfWeek);
+            date.setDate(startOfWeek.getDate() + i);
+            const ds = date.toISOString().split('T')[0];
+            if (ds > today()) break;
+            const habits = HABITS_BY_DAY[date.getDay()] || [];
+            const dayData = data.habits[ds] || {};
+            habits.forEach(h => {
+                if (stats[h.cat]) {
+                    stats[h.cat].total++;
+                    if (dayData[h.id]) stats[h.cat].done++;
+                }
+            });
+        }
+
+        const result = {};
+        CATEGORIES.forEach(c => { result[c] = stats[c].total > 0 ? Math.round(stats[c].done / stats[c].total * 100) : 0; });
+        return result;
+    }
+
+    function celebrate(emoji) {
+        const el = document.getElementById('celebration');
+        document.getElementById('celebEmoji').textContent = emoji;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 1200);
+    }
+
+    function switchPage(page, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + page).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (el) el.classList.add('active');
+        if (page === 'home') renderHome();
+        if (page === 'insights') renderInsights();
+    }
+
+    // ============ INIT ============
+    render();
+    </script>
+</body>
+</html>

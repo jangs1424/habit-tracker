@@ -1,0 +1,14 @@
+{
+  "name": "나의 정원 — 해빗 트래커",
+  "short_name": "나의 정원",
+  "start_url": "./garden-version.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F5EF",
+  "theme_color": "#5B8C5A",
+  "icons": [
+    {"src": "icon-garden-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-garden-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}

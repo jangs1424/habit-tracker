@@ -2,13 +2,21 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="나의 정원">
+    <meta name="theme-color" content="#F7F5EF">
+    <link rel="apple-touch-icon" href="icon-garden-180.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-garden-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-garden-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-garden-512.png">
+    <link rel="manifest" href="manifest-garden.json">
     <title>나의 정원 — 해빗 트래커</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--bg:#F7F5EF;--card:#FFFDF7;--primary:#5B8C5A;--primary-light:#E8F0E3;--success:#7CB342;--success-light:#F1F8E9;--warning:#FFB74D;--danger:#E57373;--text:#2E3A2E;--text-sub:#7A8A7A;--text-light:#A8B8A8;--border:#E5E0D5;--shadow:0 4px 20px rgba(91,140,90,.06);--shadow-lg:0 8px 32px rgba(91,140,90,.1);--radius:20px;--radius-sm:14px}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:90px;overflow-x:hidden}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:calc(90px + env(safe-area-inset-bottom,0px));overflow-x:hidden;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
         .container{max-width:480px;margin:0 auto;padding:20px 16px}
         h2.page-title{font-size:20px;font-weight:700;margin-bottom:16px}
 
@@ -168,15 +176,16 @@
         .evo-arrow{color:var(--border);font-size:12px}
 
         /* SETTINGS */
-        .settings-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:12px}
+        .settings-card{background:var(--card);border-radius:var(--radius);padding:16px 14px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
         .settings-card h3{font-size:14px;font-weight:600;margin-bottom:12px}
-        .settings-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-        .settings-input{padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit;width:100%}
+        .settings-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+        .settings-input{padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit;width:100%;min-width:0;max-width:100%}
         .settings-input:focus{border-color:var(--primary)}
-        .habit-mgr-item{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)}
-        .habit-mgr-name{font-size:13px;font-weight:500;flex:1}
-        .habit-mgr-days{font-size:11px;color:var(--text-sub)}
-        .habit-mgr-del{font-size:12px;color:var(--danger);cursor:pointer}
+        .habit-mgr-item{display:flex;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+        .habit-mgr-name{font-size:13px;font-weight:500;flex:1;min-width:100px}
+        .habit-mgr-time{font-size:11px;color:var(--primary);font-weight:600;background:var(--primary-light);padding:2px 6px;border-radius:8px;white-space:nowrap}
+        .habit-mgr-days{font-size:11px;color:var(--text-sub);white-space:nowrap}
+        .habit-mgr-del{font-size:12px;color:var(--danger);cursor:pointer;white-space:nowrap}
         .link-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px}
         .link-item a{color:var(--primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .link-remove{color:var(--danger);font-size:11px;cursor:pointer}
@@ -184,7 +193,7 @@
         /* MODAL */
         .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
         .modal-overlay.show{opacity:1;pointer-events:all}
-        .modal{background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 40px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s}
+        .modal{background:#fff;border-radius:20px 20px 0 0;padding:28px 24px calc(40px + env(safe-area-inset-bottom,0px));max-width:480px;width:100%;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s}
         .modal-overlay.show .modal{transform:translateY(0)}
         .modal h3{font-size:18px;font-weight:700;margin-bottom:16px}
         .modal-field{margin-bottom:14px}
@@ -208,7 +217,7 @@
         @keyframes celebBounce{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
 
         /* NAV */
-        .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:8px 0 env(safe-area-inset-bottom,8px);border-top:1px solid var(--border);z-index:50}
+        .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--border);z-index:50}
         .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;cursor:pointer;opacity:.4;transition:opacity .2s}
         .nav-item.active{opacity:1}
         .nav-icon{font-size:20px}
@@ -319,31 +328,32 @@
 
 <script>
 const DEFAULT_HABITS = [
-    {id:'meditation',name:'명상',cat:'마인드',detail:'5분',days:[1,2,3,4,5]},
-    {id:'workout',name:'홈트',cat:'몸',detail:'자세교정+전신',days:[1,3,5],hasLink:true},
-    {id:'running',name:'러닝',cat:'몸',days:[2,4],hasInput:true,unit:'km'},
-    {id:'english-shadow',name:'영어 쉐도잉',cat:'스킬',detail:'투브로크걸스',days:[1,3,5]},
-    {id:'english-grammar',name:'영어 문법',cat:'스킬',days:[2,4],hasProgress:true},
-    {id:'japanese',name:'듀오링고 일본어',cat:'스킬',detail:'5~10분',days:[1,2,3,4,5]},
-    {id:'marketing',name:'마케팅 아티클',cat:'성장',detail:'1개',days:[1,2,3,4,5]},
-    {id:'reels-plan',name:'릴스 기획/소재',cat:'콘텐츠',days:[1,4]},
-    {id:'reels-shoot',name:'릴스 촬영',cat:'콘텐츠',days:[2,5]},
-    {id:'reels-edit',name:'릴스 편집',cat:'콘텐츠',days:[3]},
-    {id:'income-shop',name:'쇼핑영상',cat:'수익',days:[1,3]},
-    {id:'income-thread',name:'스레드 운영',cat:'수익',days:[2,4]},
-    {id:'income-coupang',name:'쿠팡 정리',cat:'수익',days:[5]},
-    {id:'planning',name:'기획 연습',cat:'성장',detail:'레퍼런스',days:[3]},
-    {id:'reading',name:'독서',cat:'성장',detail:'30분',days:[2,4,6]},
-    {id:'work-block',name:'업무 블록',cat:'생활',detail:'12~20시',days:[1,2,3,4,5]},
-    {id:'morning',name:'9시 기상',cat:'생활',days:[1,2,3,4,5]},
-    {id:'diet',name:'식단 관리',cat:'몸',days:[1,2,3,4,5]},
-    {id:'laundry',name:'빨래',cat:'집안일',days:[1]},
-    {id:'cleaning',name:'청소',cat:'집안일',days:[3]},
-    {id:'organize',name:'정리+장보기',cat:'집안일',days:[5]},
-    {id:'free-workout',name:'자유 운동',cat:'몸',detail:'산책/스포츠',days:[6]},
-    {id:'hobby',name:'취미 탐색',cat:'라이프',days:[6]},
-    {id:'weekly-review',name:'다음 주 훑어보기',cat:'생활',detail:'5분',days:[0]},
+    {id:'morning',name:'9시 기상',cat:'생활',time:'09:00',days:[1,2,3,4,5]},
+    {id:'meditation',name:'명상',cat:'마인드',time:'09:10',detail:'5분',days:[1,2,3,4,5]},
+    {id:'workout',name:'홈트',cat:'몸',time:'09:30',detail:'자세교정+전신',days:[1,3,5],hasLink:true},
+    {id:'running',name:'러닝',cat:'몸',time:'09:30',days:[2,4],hasInput:true,unit:'km'},
+    {id:'free-workout',name:'자유 운동',cat:'몸',time:'10:00',detail:'산책/스포츠',days:[6]},
+    {id:'english-shadow',name:'영어 쉐도잉',cat:'스킬',time:'10:30',detail:'투브로크걸스',days:[1,3,5]},
+    {id:'english-grammar',name:'영어 문법',cat:'스킬',time:'10:30',days:[2,4],hasProgress:true},
+    {id:'japanese',name:'듀오링고 일본어',cat:'스킬',time:'10:45',detail:'5~10분',days:[1,2,3,4,5]},
+    {id:'diet',name:'식단 관리',cat:'몸',time:'11:00',days:[1,2,3,4,5]},
+    {id:'laundry',name:'빨래',cat:'집안일',time:'11:00',days:[1]},
+    {id:'cleaning',name:'청소',cat:'집안일',time:'11:00',days:[3]},
+    {id:'organize',name:'정리+장보기',cat:'집안일',time:'11:00',days:[5]},
+    {id:'marketing',name:'마케팅 아티클',cat:'성장',time:'11:30',detail:'1개',days:[1,2,3,4,5]},
+    {id:'work-block',name:'업무 블록',cat:'생활',time:'12:00',detail:'12~20시',days:[1,2,3,4,5]},
+    {id:'reels-plan',name:'릴스 기획/소재',cat:'콘텐츠',time:'12:00',days:[1,4]},
+    {id:'reels-shoot',name:'릴스 촬영',cat:'콘텐츠',time:'12:00',days:[2,5]},
+    {id:'reels-edit',name:'릴스 편집',cat:'콘텐츠',time:'12:00',days:[3]},
+    {id:'planning',name:'기획 연습',cat:'성장',time:'14:00',detail:'레퍼런스',days:[3]},
+    {id:'hobby',name:'취미 탐색',cat:'라이프',time:'15:00',days:[6]},
+    {id:'income-shop',name:'쇼핑영상',cat:'수익',time:'16:00',days:[1,3]},
+    {id:'income-thread',name:'스레드 운영',cat:'수익',time:'16:00',days:[2,4]},
+    {id:'income-coupang',name:'쿠팡 정리',cat:'수익',time:'16:00',days:[5]},
+    {id:'reading',name:'독서',cat:'성장',time:'20:00',detail:'30분',days:[2,4,6]},
+    {id:'weekly-review',name:'다음 주 훑어보기',cat:'생활',time:'20:00',detail:'5분',days:[0]},
 ];
+const HABIT_TIME_FALLBACK={morning:'09:00',meditation:'09:10',workout:'09:30',running:'09:30','free-workout':'10:00','english-shadow':'10:30','english-grammar':'10:30',japanese:'10:45',diet:'11:00',laundry:'11:00',cleaning:'11:00',organize:'11:00',marketing:'11:30','work-block':'12:00','reels-plan':'12:00','reels-shoot':'12:00','reels-edit':'12:00',planning:'14:00',hobby:'15:00','income-shop':'16:00','income-thread':'16:00','income-coupang':'16:00',reading:'20:00','weekly-review':'20:00'};
 
 const DEFAULT_TIMELINE = [
     {time:'09:00',label:'기상 + 명상'},{time:'09:30',label:'운동'},{time:'10:30',label:'영어'},
@@ -431,7 +441,7 @@ let insightPeriod='week';
 
 function loadData(){
     const s=localStorage.getItem('habitGarden');
-    if(s){const d=JSON.parse(s);if(!d.challengeDays)d.challengeDays=180;if(!d.restDays)d.restDays={};if(!d.skips)d.skips={};if(!d.gardenName)d.gardenName='';return d;}
+    if(s){const d=JSON.parse(s);if(!d.challengeDays)d.challengeDays=180;if(!d.restDays)d.restDays={};if(!d.skips)d.skips={};if(!d.gardenName)d.gardenName='';if(d.habits)d.habits.forEach(h=>{if(!h.time)h.time=HABIT_TIME_FALLBACK[h.id]||'12:00';});return d;}
     return {
         startDate:new Date().toISOString().split('T')[0],
         habits:DEFAULT_HABITS.map(h=>({...h})),
@@ -710,10 +720,11 @@ function renderHabits(){
     document.getElementById('restReasonWrap').style.display=isRest?'block':'none';
     if(isRest)document.getElementById('restReasonInput').value=typeof D.restDays[t]==='string'?D.restDays[t]:'';
 
-    const gr={};habits.forEach(x=>{if(!gr[x.cat])gr[x.cat]=[];gr[x.cat].push(x);});
+    const sorted=[...habits].sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    const blocks={};sorted.forEach(x=>{const hr=(x.time||'99:99').split(':')[0];let blk;const h=parseInt(hr);if(h<12)blk='🌅 오전';else if(h<17)blk='☀️ 오후';else blk='🌙 저녁';if(!blocks[blk])blocks[blk]=[];blocks[blk].push(x);});
     let html='';
-    Object.entries(gr).forEach(([cat,items])=>{
-        html+=`<div class="habit-category"><div class="habit-category-title" style="color:${CAT_COLORS[cat]||'#666'}">${cat}</div>`;
+    Object.entries(blocks).forEach(([blk,items])=>{
+        html+=`<div class="habit-category"><div class="habit-category-title" style="color:var(--primary)">${blk}</div>`;
         items.forEach(h=>{
             const ck=D.checks[t][h.id]||false;
             const sk=D.skips[t][h.id]||isRest;
@@ -721,7 +732,7 @@ function renderHabits(){
             html+=`<div class="habit-item ${cls}">`;
             if(sk)html+=`<div class="habit-check" style="border-color:var(--warning);color:var(--warning);font-size:11px;display:flex;align-items:center;justify-content:center">⏭</div>`;
             else html+=`<div class="habit-check ${ck?'checked':''}" onclick="toggleHabit('${h.id}')"></div>`;
-            html+=`<div class="habit-item-info"><div class="habit-item-name">${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
+            html+=`<div class="habit-item-info"><div class="habit-item-name"><span style="color:var(--primary);font-weight:600;font-size:12px;margin-right:6px">${h.time||''}</span>${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
             if(!isRest)html+=`<div class="skip-btn ${sk?'active':''}" onclick="toggleSkip('${h.id}')">${sk?'스킵됨':'스킵'}</div>`;
             if(h.hasInput&&!sk)html+=`<div><input class="habit-input" type="number" step="0.1" value="${D.running[t]||''}" onchange="saveRunning(this.value)" placeholder="0"><span class="habit-input-unit">${h.unit}</span></div>`;
             html+=`</div>`;
@@ -819,7 +830,8 @@ function renderSettings(){
         document.getElementById(type+'LinksC').innerHTML=(D.links[type]||[]).map((u,i)=>`<div class="link-item"><a href="${u}" target="_blank">${u}</a><span class="link-remove" onclick="removeLink('${type}',${i})">삭제</span></div>`).join('');
     });
     const hm=document.getElementById('habitManager'),dayNames=['일','월','화','수','목','금','토'];
-    hm.innerHTML=D.habits.map((h,i)=>`<div class="habit-mgr-item"><div class="habit-mgr-name" onclick="openModal('editHabit',${i})" style="cursor:pointer;flex:1">${h.name}</div><div class="habit-mgr-days">${h.days.map(d=>dayNames[d]).join(',')}</div><span style="color:var(--primary);font-size:13px;cursor:pointer;margin-right:8px" onclick="openModal('editHabit',${i})">편집</span><span class="habit-mgr-del" onclick="deleteHabit(${i})">삭제</span></div>`).join('');
+    const sortedH=[...D.habits].map((h,origIdx)=>({h,origIdx})).sort((a,b)=>(a.h.time||'99:99').localeCompare(b.h.time||'99:99'));
+    hm.innerHTML=sortedH.map(({h,origIdx:i})=>`<div class="habit-mgr-item"><span class="habit-mgr-time">${h.time||''}</span><div class="habit-mgr-name" onclick="openModal('editHabit',${i})" style="cursor:pointer">${h.name}</div><div class="habit-mgr-days">${h.days.map(d=>dayNames[d]).join(',')}</div><span style="color:var(--primary);font-size:12px;cursor:pointer" onclick="openModal('editHabit',${i})">편집</span><span class="habit-mgr-del" onclick="deleteHabit(${i})">삭제</span></div>`).join('');
     const ts=document.getElementById('timelineSettings');
     ts.innerHTML=D.timeline.map((t,i)=>`<div class="settings-row"><input class="settings-input" type="time" value="${t.time}" onchange="updateTimeline(${i},'time',this.value)" style="width:100px"><input class="settings-input" value="${t.label}" onchange="updateTimeline(${i},'label',this.value)" style="flex:1"><span class="habit-mgr-del" onclick="deleteTimelineItem(${i})" style="cursor:pointer">삭제</span></div>`).join('');
 }
@@ -858,6 +870,7 @@ function openModal(type,arg){
         const h=D.habits[arg];
         m.innerHTML=`<h3>습관 수정</h3>
             <div class="modal-field"><label>이름</label><input id="mEditName" value="${h.name}"></div>
+            <div class="modal-field"><label>시간</label><input type="time" id="mEditTime" value="${h.time||'12:00'}"></div>
             <div class="modal-field"><label>카테고리</label><select id="mEditCat">${Object.keys(CAT_COLORS).map(c=>`<option${c===h.cat?' selected':''}>${c}</option>`).join('')}</select></div>
             <div class="modal-field"><label>상세</label><input id="mEditDetail" value="${h.detail||''}" placeholder="선택사항"></div>
             <div class="modal-field"><label>요일</label><div class="day-toggles" id="mEditDays">${dayNames.map((d,i)=>`<div class="day-toggle${h.days.includes(i)?' active':''}" data-day="${i}" onclick="this.classList.toggle('active')">${d}</div>`).join('')}</div></div>
@@ -866,6 +879,7 @@ function openModal(type,arg){
     else if(type==='addHabit'){
         m.innerHTML=`<h3>습관 추가</h3>
             <div class="modal-field"><label>이름</label><input id="mHabitName"></div>
+            <div class="modal-field"><label>시간</label><input type="time" id="mHabitTime" value="12:00"></div>
             <div class="modal-field"><label>카테고리</label><select id="mHabitCat">${Object.keys(CAT_COLORS).map(c=>`<option>${c}</option>`).join('')}</select></div>
             <div class="modal-field"><label>상세</label><input id="mHabitDetail" placeholder="선택사항"></div>
             <div class="modal-field"><label>요일</label><div class="day-toggles" id="mHabitDays">${dayNames.map((d,i)=>`<div class="day-toggle" data-day="${i}" onclick="this.classList.toggle('active')">${d}</div>`).join('')}</div></div>
@@ -883,8 +897,8 @@ function openModal(type,arg){
     o.classList.add('show');
 }
 function closeModal(){document.getElementById('modalOverlay').classList.remove('show');}
-function saveNewHabit(){const name=document.getElementById('mHabitName').value;if(!name)return;const cat=document.getElementById('mHabitCat').value;const detail=document.getElementById('mHabitDetail').value;const days=[...document.querySelectorAll('#mHabitDays .day-toggle.active')].map(el=>parseInt(el.dataset.day));if(!days.length)return;D.habits.push({id:'custom-'+Date.now(),name,cat,detail,days});save();closeModal();render();}
-function saveEditHabit(idx){const name=document.getElementById('mEditName').value;if(!name)return;const cat=document.getElementById('mEditCat').value;const detail=document.getElementById('mEditDetail').value;const days=[...document.querySelectorAll('#mEditDays .day-toggle.active')].map(el=>parseInt(el.dataset.day));if(!days.length)return;D.habits[idx].name=name;D.habits[idx].cat=cat;D.habits[idx].detail=detail;D.habits[idx].days=days;save();closeModal();render();}
+function saveNewHabit(){const name=document.getElementById('mHabitName').value;if(!name)return;const cat=document.getElementById('mHabitCat').value;const detail=document.getElementById('mHabitDetail').value;const time=document.getElementById('mHabitTime').value||'12:00';const days=[...document.querySelectorAll('#mHabitDays .day-toggle.active')].map(el=>parseInt(el.dataset.day));if(!days.length)return;D.habits.push({id:'custom-'+Date.now(),name,cat,detail,time,days});save();closeModal();render();}
+function saveEditHabit(idx){const name=document.getElementById('mEditName').value;if(!name)return;const cat=document.getElementById('mEditCat').value;const detail=document.getElementById('mEditDetail').value;const time=document.getElementById('mEditTime').value||'12:00';const days=[...document.querySelectorAll('#mEditDays .day-toggle.active')].map(el=>parseInt(el.dataset.day));if(!days.length)return;D.habits[idx].name=name;D.habits[idx].cat=cat;D.habits[idx].detail=detail;D.habits[idx].time=time;D.habits[idx].days=days;save();closeModal();render();}
 
 // ===== HELPERS =====
 function compForDate(ds){if(D.restDays[ds])return -1;const d=D.checks[ds];if(!d)return 0;const date=new Date(ds);const sk=D.skips[ds]||{};const h=getHabitsForDay(date.getDay()).filter(x=>!sk[x.id]);if(!h.length)return 0;return h.filter(x=>d[x.id]).length/h.length;}
