@@ -392,6 +392,39 @@ const PLANT_TYPES={
     '성장':{colors:['#FFB74D','#FFC107','#FFD54F'],type:'sunflower'},
 };
 
+const DAILY_QUOTES=[
+    '작은 습관이 인생을 바꾼다',
+    '어제보다 1%만 나아지면 돼',
+    '완벽하지 않아도 괜찮아, 꾸준하면 돼',
+    '네가 쉬는 동안 누군가는 달리고 있어',
+    '시작이 반이다',
+    '오늘의 나는 어제의 나보다 강하다',
+    '포기하지 않는 한 실패는 없어',
+    '좋은 습관은 최고의 투자야',
+    '매일 조금씩, 그게 비밀이야',
+    '네 미래는 오늘 뭘 하느냐에 달렸어',
+    '행동이 감정을 만든다',
+    '할 수 있다고 믿으면 반은 이룬 거야',
+    '오늘 하루도 성장하는 중',
+    '루틴은 자유를 만든다',
+    '천 리 길도 한 걸음부터',
+    '어떤 날은 버티는 것만으로 충분해',
+    '꿈을 적으면 목표가 되고, 행동하면 현실이 돼',
+    '지금 이 순간이 가장 빠른 때',
+    '나를 믿는 사람은 나 하나면 충분해',
+    '작은 승리를 축하하자',
+    '흔들려도 방향만 맞으면 돼',
+    '성장은 불편함 속에서 일어나',
+    '오늘 뿌린 씨앗이 내일의 숲이 된다',
+    '쉬어가도 괜찮아, 멈추지만 마',
+    '네 속도로 가면 돼',
+    '반복은 지루하지만 결과는 놀라워',
+    '좋은 하루를 만드는 건 나야',
+    '목표가 아니라 시스템을 믿어',
+    '과거의 나에게 고마워할 미래가 올 거야',
+    '오늘도 정원을 가꾸는 중 🌿',
+];
+
 let D=loadData();
 let insightPeriod='week';
 
@@ -596,8 +629,9 @@ function renderHome(){
 
     renderGardenSVG(stage,pct);
 
-    document.getElementById('gardenTitle').textContent=D.gardenName||stage.title;
-    document.getElementById('gardenSub').textContent=`Lv.${D.level} — ${stage.title}`;
+    document.getElementById('gardenTitle').textContent=`Lv.${D.level} — ${D.gardenName||stage.title}`;
+    const qi=Math.floor((new Date(td()).getTime()/864e5))%DAILY_QUOTES.length;
+    document.getElementById('gardenSub').textContent=DAILY_QUOTES[qi];
     document.getElementById('gardenMsg').textContent=stage.msgs[Math.floor(Math.random()*stage.msgs.length)];
     document.getElementById('ringPct').textContent=isRestHome?'😴':Math.round(pct*100)+'%';
     document.getElementById('streakDays').textContent=calcStreak()+'일';
