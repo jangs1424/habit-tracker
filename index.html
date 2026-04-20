@@ -139,6 +139,10 @@
         .task-add-row input.task-add-time{width:92px;padding:10px 8px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;outline:none;font-family:inherit}
         .task-add-row button{padding:10px 14px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-weight:600;font-size:13px;cursor:pointer}
         .task-delete-btn{font-size:16px;color:var(--text-light);cursor:pointer;padding:0 4px;line-height:1}
+        .habit-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+        .habit-chip{font-size:11px;color:var(--primary);background:var(--primary-light);padding:3px 8px;border-radius:8px;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;border:none;font-family:inherit}
+        .habit-chip:active{opacity:.6}
+        .habit-chip.book{background:#FEF3C7;color:#92400E}
         .habit-item-info{flex:1;min-width:0}
         .habit-item-name{font-size:14px;font-weight:500;line-height:1.3;overflow:hidden;text-overflow:ellipsis}
         .habit-item-detail{font-size:11px;color:var(--text-sub);margin-top:2px}
@@ -460,6 +464,9 @@ const DEFAULT_HABITS = [
     {id:'weekly-review',name:'다음 주 훑어보기',cat:'생활',time:'20:00',detail:'5분',days:[0]},
 ];
 const HABIT_TIME_FALLBACK={morning:'09:00',meditation:'09:10',workout:'09:30',running:'09:30','free-workout':'10:00','english-shadow':'10:30','english-grammar':'10:30',japanese:'10:45',diet:'11:00',laundry:'11:00',cleaning:'11:00',organize:'11:00',marketing:'11:30','work-part1':'12:00','work-part2':'16:00','work-block':'12:00','reels-plan':'12:00','reels-shoot':'12:00','reels-edit':'12:00',planning:'14:00',hobby:'15:00','income-shop':'16:00','income-thread':'16:00','income-coupang':'16:00',reading:'20:00','weekly-review':'20:00'};
+const HABIT_LINK_CAT={workout:'workout','free-workout':'workout','english-shadow':'english','english-grammar':'english'};
+function shortLinkLabel(u,fallback){try{const h=new URL(u).hostname.replace(/^www\./,'');if(h.includes('youtu'))return'YouTube';if(h.includes('netflix'))return'Netflix';return h.split('.')[0];}catch(e){return fallback;}}
+function getHabitLinks(h){const cat=HABIT_LINK_CAT[h.id];if(!cat)return [];return (D.links&&D.links[cat])||[];}
 
 const DEFAULT_TIMELINE = [
     {time:'09:00',label:'기상 + 명상'},{time:'09:30',label:'운동'},{time:'10:30',label:'영어'},
@@ -502,19 +509,19 @@ const PHASES=[
 
 // ===== STATE =====
 let D=loadData();
-let viewDate=new Date().toISOString().split('T')[0];
+let viewDate=toLocalISO();
 function vd(){return viewDate;}
-function isPast(){return viewDate<new Date().toISOString().split('T')[0];}
+function isPast(){return viewDate<toLocalISO();}
 function changeViewDate(delta){
     const d=new Date(viewDate);d.setDate(d.getDate()+delta);
-    const ds=d.toISOString().split('T')[0];
-    if(ds>new Date().toISOString().split('T')[0])return;
+    const ds=toLocalISO(d);
+    if(ds>toLocalISO())return;
     viewDate=ds;render();
 }
-function goToday(){viewDate=new Date().toISOString().split('T')[0];render();}
+function goToday(){viewDate=toLocalISO();render();}
 function pickDate(){
     const inp=document.createElement('input');
-    inp.type='date';inp.value=viewDate;inp.max=new Date().toISOString().split('T')[0];
+    inp.type='date';inp.value=viewDate;inp.max=toLocalISO();
     inp.style.cssText='position:fixed;top:50%;left:50%;width:1px;height:1px;opacity:0;border:none';
     document.body.appendChild(inp);
     let done=false;
@@ -553,7 +560,7 @@ function loadData(){
     const s=localStorage.getItem('habit180v3');
     if(s){return migrateData(JSON.parse(s));}
     return {
-        startDate:new Date().toISOString().split('T')[0],
+        startDate:toLocalISO(),
         habits:DEFAULT_HABITS.map(h=>({...h})),
         timeline:DEFAULT_TIMELINE.map(t=>({...t})),
         bigGoals:DEFAULT_BIG_GOALS.map(g=>({...g})),
@@ -597,7 +604,8 @@ async function syncFromCloud(){
     }catch(e){console.warn('sync down failed',e);}
 }
 function markSyncTime(){D._syncTime=Date.now();}
-function td(){return new Date().toISOString().split('T')[0];}
+function toLocalISO(d){if(!d)d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${dd}`;}
+function td(){return toLocalISO();}
 function dow(){return new Date().getDay();}
 function dayCount(){return Math.max(1,Math.floor((new Date(td())-new Date(D.startDate))/864e5)+1);}
 function weekCount(){return Math.ceil(dayCount()/7);}
@@ -699,7 +707,7 @@ function renderHabits(){
     const lab=document.getElementById('dateNavLabel');
     if(lab){
         const mo=dateObj.getMonth()+1,da=dateObj.getDate();
-        const today=new Date().toISOString().split('T')[0];
+        const today=toLocalISO();
         lab.textContent=t===today?`${mo}월 ${da}일 (오늘)`:`${dateObj.getFullYear()}. ${mo}. ${da}.`;
         document.getElementById('dateNavNext').disabled=(t===today);
         document.getElementById('dateNavToday').classList.toggle('hidden',t===today);
@@ -730,7 +738,12 @@ function renderHabits(){
             const ic=CAT_ICONS[h.cat]||'•';
             html+=`<span class="habit-time-pill" onclick="editHabitTime('${h.id}')">${h.time||'--:--'}</span>`;
             html+=`<span class="habit-cat-icon" title="${h.cat||''}">${ic}</span>`;
-            html+=`<div class="habit-item-info"><div class="habit-item-name">${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
+            const links=getHabitLinks(h);
+            const isReading=h.id==='reading';
+            let chips='';
+            if(links.length)chips+=`<div class="habit-chips">${links.map((u,i)=>`<a class="habit-chip" href="${u}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▶ ${shortLinkLabel(u,'영상 '+(i+1))}</a>`).join('')}</div>`;
+            if(isReading&&D.books&&D.books.length)chips+=`<div class="habit-chips">${D.books.map(b=>`<span class="habit-chip book">📖 ${b}</span>`).join('')}</div>`;
+            html+=`<div class="habit-item-info"><div class="habit-item-name">${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}${chips}</div>`;
             if(h.hasInput&&!sk)html+=`<div><input class="habit-input" type="number" step="0.1" value="${D.running[t]||''}" onchange="saveRunning(this.value)" placeholder="0"><span class="habit-input-unit">${h.unit}</span></div>`;
             if(!isRest)html+=`<div class="skip-btn ${sk?'active':''}" onclick="toggleSkip('${h.id}')">${sk?'스킵됨':'스킵'}</div>`;
             html+=`</div>`;
@@ -797,16 +810,16 @@ function renderPeriodBars(){
     if(insightPeriod==='week'){
         const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);
         let h='';
-        for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=date.toISOString().split('T')[0];const c=ds>td()?0:compForDate(ds);const isR=c===-1;const pct=isR?0:Math.round(c*100);h+=`<div class="weekly-bar-col"><div class="weekly-bar-pct">${isR?'😴':pct+'%'}</div><div class="weekly-bar" style="height:${isR?4:Math.max(4,pct)}%;background:${isR?'#FFB84D':colors[i]}"></div><div class="weekly-bar-label">${labels[i]}</div></div>`;}
+        for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=toLocalISO(date);const c=ds>td()?0:compForDate(ds);const isR=c===-1;const pct=isR?0:Math.round(c*100);h+=`<div class="weekly-bar-col"><div class="weekly-bar-pct">${isR?'😴':pct+'%'}</div><div class="weekly-bar" style="height:${isR?4:Math.max(4,pct)}%;background:${isR?'#FFB84D':colors[i]}"></div><div class="weekly-bar-label">${labels[i]}</div></div>`;}
         bars.innerHTML=h;
     } else if(insightPeriod==='month'){
         const now=new Date(),year=now.getFullYear(),month=now.getMonth();
         let h='';
-        for(let w=0;w<4;w++){let total=0,count=0;for(let d=w*7;d<(w+1)*7&&d<31;d++){const date=new Date(year,month,d+1);const ds=date.toISOString().split('T')[0];if(ds>td())break;const c=compForDate(ds);if(c>=0){total+=c;count++;}}const avg=count?Math.round(total/count*100):0;h+=`<div class="weekly-bar-col"><div class="weekly-bar-pct">${avg}%</div><div class="weekly-bar" style="height:${Math.max(4,avg)}%;background:${colors[w]}"></div><div class="weekly-bar-label">${labels[w]}</div></div>`;}
+        for(let w=0;w<4;w++){let total=0,count=0;for(let d=w*7;d<(w+1)*7&&d<31;d++){const date=new Date(year,month,d+1);const ds=toLocalISO(date);if(ds>td())break;const c=compForDate(ds);if(c>=0){total+=c;count++;}}const avg=count?Math.round(total/count*100):0;h+=`<div class="weekly-bar-col"><div class="weekly-bar-pct">${avg}%</div><div class="weekly-bar" style="height:${Math.max(4,avg)}%;background:${colors[w]}"></div><div class="weekly-bar-label">${labels[w]}</div></div>`;}
         bars.innerHTML=h;
     } else {
         const start=new Date(D.startDate);let h='';
-        for(let m=0;m<6;m++){let total=0,count=0;for(let d=0;d<30;d++){const date=new Date(start);date.setDate(start.getDate()+m*30+d);const ds=date.toISOString().split('T')[0];if(ds>td())break;const c=compForDate(ds);if(c>=0){total+=c;count++;}}const avg=count?Math.round(total/count*100):0;h+=`<div class="weekly-bar-col"><div class="weekly-bar-pct">${avg}%</div><div class="weekly-bar" style="height:${Math.max(4,avg)}%;background:${colors[m]}"></div><div class="weekly-bar-label">${labels[m]}</div></div>`;}
+        for(let m=0;m<6;m++){let total=0,count=0;for(let d=0;d<30;d++){const date=new Date(start);date.setDate(start.getDate()+m*30+d);const ds=toLocalISO(date);if(ds>td())break;const c=compForDate(ds);if(c>=0){total+=c;count++;}}const avg=count?Math.round(total/count*100):0;h+=`<div class="weekly-bar-col"><div class="weekly-bar-pct">${avg}%</div><div class="weekly-bar" style="height:${Math.max(4,avg)}%;background:${colors[m]}"></div><div class="weekly-bar-label">${labels[m]}</div></div>`;}
         bars.innerHTML=h;
     }
 }
@@ -832,7 +845,7 @@ function renderEvo(){
 
 function renderHeatmap(){
     const hm=document.getElementById('heatmap');let h='';const start=new Date(D.startDate);
-    for(let i=0;i<Math.min(dayCount(),D.challengeDays);i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=d.toISOString().split('T')[0];const c=compForDate(ds);let l='';if(c===-1)l='rest';else if(c>.8)l='l4';else if(c>.6)l='l3';else if(c>.3)l='l2';else if(c>0)l='l1';h+=`<div class="heatmap-cell ${l}"></div>`;}
+    for(let i=0;i<Math.min(dayCount(),D.challengeDays);i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=toLocalISO(d);const c=compForDate(ds);let l='';if(c===-1)l='rest';else if(c>.8)l='l4';else if(c>.6)l='l3';else if(c>.3)l='l2';else if(c>0)l='l1';h+=`<div class="heatmap-cell ${l}"></div>`;}
     hm.innerHTML=h;
 }
 
@@ -1098,10 +1111,10 @@ function saveEditHabit(idx){
 
 // ===== HELPERS =====
 function compForDate(ds){if(D.restDays[ds])return -1;const d=D.checks[ds];if(!d)return 0;const date=new Date(ds);const sk=D.skips[ds]||{};const h=getHabitsForDay(date.getDay()).filter(x=>!sk[x.id]);if(!h.length)return 0;return h.filter(x=>d[x.id]).length/h.length;}
-function calcStreak(){let s=0,d=new Date();for(let i=0;i<D.challengeDays;i++){const ds=d.toISOString().split('T')[0];const c=compForDate(ds);if(c===-1){s++;} else if(c>=.7)s++;else if(i>0)break;d.setDate(d.getDate()-1);}return s;}
-function calcHabitStreak(hid){let s=0,d=new Date();for(let i=0;i<D.challengeDays;i++){const ds=d.toISOString().split('T')[0];const dw=d.getDay();const h=getHabitsForDay(dw);if(h.some(x=>x.id===hid)){if(D.checks[ds]&&D.checks[ds][hid])s++;else break;}d.setDate(d.getDate()-1);}return s;}
-function getWeekData(){const days=['일','월','화','수','목','금','토'];let tp=0,cnt=0,bp=0,bd='-',wx=0;const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=date.toISOString().split('T')[0];if(ds>td())break;const c=compForDate(ds);tp+=c;cnt++;if(c>bp){bp=c;bd=days[date.getDay()];}const h=getHabitsForDay(date.getDay());const dd=D.checks[ds]||{};wx+=h.filter(x=>dd[x.id]).length*10;}return{avgPct:cnt?Math.round(tp/cnt*100):0,bestDay:bd,weekXP:wx};}
-function getCatStats(){const s={};CATEGORIES.forEach(c=>{s[c]={t:0,d:0};});const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=date.toISOString().split('T')[0];if(ds>td())break;const h=getHabitsForDay(date.getDay());const dd=D.checks[ds]||{};h.forEach(x=>{if(s[x.cat]){s[x.cat].t++;if(dd[x.id])s[x.cat].d++;}});}const r={};CATEGORIES.forEach(c=>{r[c]=s[c].t?Math.round(s[c].d/s[c].t*100):0;});return r;}
+function calcStreak(){let s=0,d=new Date();for(let i=0;i<D.challengeDays;i++){const ds=toLocalISO(d);const c=compForDate(ds);if(c===-1){s++;} else if(c>=.7)s++;else if(i>0)break;d.setDate(d.getDate()-1);}return s;}
+function calcHabitStreak(hid){let s=0,d=new Date();for(let i=0;i<D.challengeDays;i++){const ds=toLocalISO(d);const dw=d.getDay();const h=getHabitsForDay(dw);if(h.some(x=>x.id===hid)){if(D.checks[ds]&&D.checks[ds][hid])s++;else break;}d.setDate(d.getDate()-1);}return s;}
+function getWeekData(){const days=['일','월','화','수','목','금','토'];let tp=0,cnt=0,bp=0,bd='-',wx=0;const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=toLocalISO(date);if(ds>td())break;const c=compForDate(ds);tp+=c;cnt++;if(c>bp){bp=c;bd=days[date.getDay()];}const h=getHabitsForDay(date.getDay());const dd=D.checks[ds]||{};wx+=h.filter(x=>dd[x.id]).length*10;}return{avgPct:cnt?Math.round(tp/cnt*100):0,bestDay:bd,weekXP:wx};}
+function getCatStats(){const s={};CATEGORIES.forEach(c=>{s[c]={t:0,d:0};});const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=toLocalISO(date);if(ds>td())break;const h=getHabitsForDay(date.getDay());const dd=D.checks[ds]||{};h.forEach(x=>{if(s[x.cat]){s[x.cat].t++;if(dd[x.id])s[x.cat].d++;}});}const r={};CATEGORIES.forEach(c=>{r[c]=s[c].t?Math.round(s[c].d/s[c].t*100):0;});return r;}
 function getPeriodDates(){/* placeholder */return[];}
 function celebrate(e,msg){const el=document.getElementById('celebration');document.getElementById('celebEmoji').textContent=e;const tx=document.getElementById('celebText');if(tx)tx.textContent=msg||'';el.classList.remove('show');void el.offsetWidth;el.classList.add('show');clearTimeout(window._celebT);window._celebT=setTimeout(()=>el.classList.remove('show'),2400);}
 function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');render();}
