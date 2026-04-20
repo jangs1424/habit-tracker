@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>나의 정원 — 해빗 트래커</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#F7F5EF;--card:#FFFDF7;--primary:#5B8C5A;--primary-light:#E8F0E3;--success:#7CB342;--success-light:#F1F8E9;--warning:#FFB74D;--danger:#E57373;--text:#2E3A2E;--text-sub:#7A8A7A;--text-light:#A8B8A8;--border:#E5E0D5;--shadow:0 4px 20px rgba(91,140,90,.06);--shadow-lg:0 8px 32px rgba(91,140,90,.1);--radius:20px;--radius-sm:14px}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:90px;overflow-x:hidden}
+        .container{max-width:480px;margin:0 auto;padding:20px 16px}
+        h2.page-title{font-size:20px;font-weight:700;margin-bottom:16px}
+
+        /* HEADER */
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .header-left h2{font-size:20px;font-weight:700;color:var(--text)}
+        .header-left .date{font-size:13px;color:var(--text-sub);margin-top:2px}
+        .phase-badge{padding:6px 12px;background:var(--primary-light);color:var(--primary);border-radius:99px;font-size:12px;font-weight:600}
+
+        /* GARDEN SCENE */
+        .garden-card{border-radius:var(--radius);padding:0;text-align:center;margin-bottom:20px;position:relative;overflow:hidden;box-shadow:var(--shadow-lg);height:280px}
+        .garden-svg{width:100%;height:100%}
+        .garden-info{position:absolute;bottom:0;left:0;right:0;padding:16px 20px;background:linear-gradient(transparent,rgba(0,0,0,.35));color:#fff;text-align:left}
+        .garden-title{font-size:16px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+        .garden-sub{font-size:12px;opacity:.85;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+        .garden-msg{position:absolute;top:16px;left:20px;right:20px;font-size:13px;color:#fff;font-weight:500;text-shadow:0 1px 4px rgba(0,0,0,.4);text-align:center;opacity:.9}
+
+        /* PROGRESS RING */
+        .stats-row{display:flex;gap:10px;margin-bottom:20px}
+        .stat-card{flex:1;background:var(--card);border-radius:var(--radius-sm);padding:16px 12px;text-align:center;box-shadow:var(--shadow)}
+        .stat-value{font-size:22px;font-weight:700;color:var(--primary)}
+        .stat-label{font-size:11px;color:var(--text-sub);margin-top:4px}
+
+        /* SEED PROGRESS */
+        .seed-bar{background:var(--card);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;box-shadow:var(--shadow)}
+        .seed-bar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .seed-bar-title{font-size:13px;font-weight:600;color:var(--text)}
+        .seed-bar-count{font-size:12px;color:var(--primary);font-weight:600}
+        .seed-track{height:8px;background:var(--border);border-radius:99px;overflow:hidden}
+        .seed-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#A5D6A7,#66BB6A,#43A047);transition:width .5s}
+
+        /* MINI CARDS */
+        .mini-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+        .mini-card{background:var(--card);border-radius:var(--radius-sm);padding:12px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.03)}
+        .mini-card-icon{font-size:20px;margin-bottom:4px}
+        .mini-card-title{font-size:11px;color:var(--text-sub);font-weight:500}
+        .mini-card-progress{height:3px;background:var(--border);border-radius:99px;overflow:hidden;margin:6px 0 4px}
+        .mini-card-progress-fill{height:100%;border-radius:99px;transition:width .4s}
+        .mini-card-stat{font-size:10px;color:var(--text-light);font-weight:600}
+
+        /* TIMELINE */
+        .timeline{position:relative;padding-left:40px;margin-bottom:20px}
+        .timeline::before{content:'';position:absolute;left:24px;top:0;bottom:0;width:2px;background:var(--border)}
+        .timeline-item{position:relative;margin-bottom:8px}
+        .timeline-dot{position:absolute;left:-32px;top:8px;width:14px;height:14px;border-radius:50%;border:2.5px solid var(--border);background:var(--card);z-index:1}
+        .timeline-dot.done{background:var(--success);border-color:var(--success)}
+        .timeline-dot.current{background:var(--primary);border-color:var(--primary);box-shadow:0 0 0 4px rgba(91,140,90,.2)}
+        .timeline-card{background:var(--card);border-radius:var(--radius-sm);padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,.03)}
+        .timeline-card.current{border-left:3px solid var(--primary)}
+        .timeline-time{font-size:11px;color:var(--text-sub);font-weight:500}
+        .timeline-name{font-size:14px;font-weight:500;margin-top:2px}
+        .timeline-now{font-size:11px;color:var(--primary);font-weight:600;margin-top:2px}
+
+        /* PHASE */
+        .phase-card{background:var(--card);border-radius:var(--radius);padding:16px 20px;box-shadow:var(--shadow);margin-bottom:20px;display:flex;align-items:center;gap:14px}
+        .phase-icon{font-size:28px}.phase-info{flex:1}
+        .phase-title{font-size:14px;font-weight:600}
+        .phase-desc{font-size:12px;color:var(--text-sub);margin-top:2px}
+        .phase-progress{height:4px;background:var(--border);border-radius:99px;margin-top:8px;overflow:hidden}
+        .phase-progress-fill{height:100%;background:var(--primary);border-radius:99px}
+
+        /* HABITS */
+        .habit-day-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .habit-day-title{font-size:18px;font-weight:700}
+        .habit-day-count{font-size:13px;color:var(--text-sub)}
+        .habit-category{margin-bottom:16px}
+        .habit-category-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:0 4px;margin-bottom:8px}
+        .habit-item{background:var(--card);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.03);transition:transform .1s}
+        .habit-item:active{transform:scale(.98)}
+        .habit-item.completed{opacity:.55}
+        .habit-item.completed .habit-item-name{text-decoration:line-through}
+        .habit-item.skipped{opacity:.45;background:#F5F3ED}
+        .habit-item.skipped .habit-item-name{text-decoration:line-through;color:var(--text-light)}
+        .habit-check{width:26px;height:26px;border-radius:50%;border:2.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0}
+        .habit-check.checked{background:var(--success);border-color:var(--success);animation:pop .3s ease}
+        @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+        .habit-check.checked::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
+        .habit-item-info{flex:1}
+        .habit-item-name{font-size:14px;font-weight:500}
+        .habit-item-detail{font-size:11px;color:var(--text-sub);margin-top:2px}
+        .habit-item-link{font-size:11px;color:var(--primary);text-decoration:none;margin-top:2px;display:inline-block}
+        .habit-input{width:52px;padding:4px 6px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;text-align:center;outline:none}
+        .habit-input:focus{border-color:var(--primary)}
+        .habit-input-unit{font-size:11px;color:var(--text-sub)}
+        .skip-btn{font-size:11px;color:var(--text-light);cursor:pointer;padding:4px 8px;border-radius:8px;border:1px solid var(--border);white-space:nowrap;transition:all .2s}
+        .skip-btn:hover,.skip-btn.active{background:var(--warning);color:#fff;border-color:var(--warning)}
+        .rest-day-bar{background:var(--card);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+        .rest-day-bar .label{font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px}
+        .rest-toggle{width:44px;height:24px;border-radius:99px;background:var(--border);position:relative;cursor:pointer;transition:background .2s}
+        .rest-toggle.on{background:var(--warning)}
+        .rest-toggle::after{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+        .rest-toggle.on::after{transform:translateX(20px)}
+        .rest-reason{margin-top:8px;background:var(--card);border-radius:var(--radius-sm);padding:10px 16px;box-shadow:var(--shadow)}
+        .rest-reason input{width:100%;border:none;outline:none;font-size:13px;font-family:inherit;background:transparent}
+
+        /* JOURNAL */
+        .journal-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:12px}
+        .journal-card h3{font-size:14px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+        .journal-textarea{width:100%;min-height:70px;padding:12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.6}
+        .journal-textarea:focus{border-color:var(--primary)}
+
+        /* GOALS */
+        .big-progress{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+        .big-progress h3{font-size:14px;color:var(--text-sub);margin-bottom:10px}
+        .big-progress-bar{height:12px;background:var(--border);border-radius:99px;overflow:hidden}
+        .big-progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#A5D6A7,#43A047);transition:width .5s}
+        .big-progress-text{display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--text-sub)}
+        .goal-section{margin-bottom:20px}
+        .goal-section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+        .goal-section-title{font-size:15px;font-weight:700}
+        .goal-section-edit{font-size:12px;color:var(--primary);cursor:pointer}
+        .goal-card{background:var(--card);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:8px;box-shadow:var(--shadow)}
+        .goal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .goal-name{font-size:14px;font-weight:500}
+        .goal-nums{font-size:12px;color:var(--text-sub)}
+        .goal-bar{height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+        .goal-bar-fill{height:100%;border-radius:99px;transition:width .4s}
+        .goal-check-item{background:var(--card);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.03)}
+        .goal-check-info{flex:1}
+        .goal-check-name{font-size:13px;font-weight:500}
+        .goal-check-progress{font-size:11px;color:var(--text-sub)}
+        .goal-check-bar{height:4px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:4px}
+        .goal-check-bar-fill{height:100%;border-radius:99px;transition:width .3s}
+
+        /* INSIGHTS */
+        .insight-tabs{display:flex;gap:8px;margin-bottom:16px}
+        .insight-tab{padding:8px 16px;border-radius:99px;font-size:13px;font-weight:500;border:none;cursor:pointer;background:var(--card);color:var(--text-sub);transition:all .2s}
+        .insight-tab.active{background:var(--primary);color:#fff}
+        .insight-card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:14px}
+        .insight-card h3{font-size:15px;font-weight:600;margin-bottom:14px}
+        .insight-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+        .insight-row:last-child{border-bottom:none}
+        .insight-label{font-size:13px;color:var(--text-sub)}
+        .insight-value{font-size:14px;font-weight:600}
+        .weekly-bars{display:flex;align-items:flex-end;justify-content:space-between;height:120px;padding:0 8px;gap:8px}
+        .weekly-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+        .weekly-bar{width:100%;border-radius:6px 6px 0 0;transition:height .4s;min-height:4px}
+        .weekly-bar-label{font-size:11px;color:var(--text-sub)}
+        .weekly-bar-pct{font-size:10px;font-weight:600}
+        .category-bars{display:flex;flex-direction:column;gap:10px}
+        .cat-bar-row{display:flex;align-items:center;gap:10px}
+        .cat-bar-label{font-size:12px;width:60px;color:var(--text-sub)}
+        .cat-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:99px;overflow:hidden}
+        .cat-bar-fill{height:100%;border-radius:99px;transition:width .4s}
+        .cat-bar-pct{font-size:12px;font-weight:600;width:36px;text-align:right}
+        .running-stats{display:flex;gap:12px}
+        .running-stat{flex:1;text-align:center;padding:16px;background:var(--bg);border-radius:var(--radius-sm)}
+        .running-stat-value{font-size:24px;font-weight:700;color:var(--primary)}
+        .running-stat-label{font-size:11px;color:var(--text-sub);margin-top:4px}
+        .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+        .heatmap-cell{aspect-ratio:1;border-radius:4px;background:var(--border)}
+        .heatmap-cell.l1{background:#C8E6C9}.heatmap-cell.l2{background:#81C784}.heatmap-cell.l3{background:#4CAF50}.heatmap-cell.l4{background:#2E7D32}.heatmap-cell.rest{background:#FFE0B2}
+        .garden-timeline{display:flex;align-items:center;justify-content:space-between;padding:10px 0;overflow-x:auto;gap:4px}
+        .garden-stage{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.3;min-width:48px}
+        .garden-stage.reached{opacity:1}.garden-stage.current{opacity:1;transform:scale(1.15)}
+        .garden-stage-label{font-size:9px;color:var(--text-sub)}
+        .evo-arrow{color:var(--border);font-size:12px}
+
+        /* SETTINGS */
+        .settings-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:12px}
+        .settings-card h3{font-size:14px;font-weight:600;margin-bottom:12px}
+        .settings-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+        .settings-input{padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit;width:100%}
+        .settings-input:focus{border-color:var(--primary)}
+        .habit-mgr-item{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)}
+        .habit-mgr-name{font-size:13px;font-weight:500;flex:1}
+        .habit-mgr-days{font-size:11px;color:var(--text-sub)}
+        .habit-mgr-del{font-size:12px;color:var(--danger);cursor:pointer}
+        .link-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px}
+        .link-item a{color:var(--primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .link-remove{color:var(--danger);font-size:11px;cursor:pointer}
+
+        /* MODAL */
+        .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+        .modal-overlay.show{opacity:1;pointer-events:all}
+        .modal{background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 40px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s}
+        .modal-overlay.show .modal{transform:translateY(0)}
+        .modal h3{font-size:18px;font-weight:700;margin-bottom:16px}
+        .modal-field{margin-bottom:14px}
+        .modal-field label{font-size:12px;color:var(--text-sub);display:block;margin-bottom:4px}
+        .modal-field input,.modal-field select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;outline:none}
+        .modal-actions{display:flex;gap:10px;margin-top:18px}
+        .btn{padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff}
+        .btn-outline{padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;border:1.5px solid var(--border);cursor:pointer;background:transparent;color:var(--text)}
+        .btn-sm{padding:8px 16px;font-size:12px}
+        .day-toggles{display:flex;gap:6px}
+        .day-toggle{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;transition:all .2s}
+        .day-toggle.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+        .goal-edit-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+        .goal-edit-row label{font-size:13px;min-width:60px}
+        .goal-edit-row input{padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;width:80px}
+
+        /* CELEBRATION */
+        .celebration{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:200;transition:transform .3s}
+        .celebration.show{transform:translate(-50%,-50%) scale(1)}
+        .celebration-emoji{font-size:80px;animation:celebBounce .6s ease}
+        @keyframes celebBounce{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+        /* NAV */
+        .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:8px 0 env(safe-area-inset-bottom,8px);border-top:1px solid var(--border);z-index:50}
+        .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;cursor:pointer;opacity:.4;transition:opacity .2s}
+        .nav-item.active{opacity:1}
+        .nav-icon{font-size:20px}
+        .nav-item span:last-child{font-size:10px;font-weight:500}
+
+        .page{display:none}.page.active{display:block}
+
+        /* Fireflies animation */
+        @keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.1)}}
+        @keyframes firefly{0%,100%{opacity:.2}50%{opacity:.8}}
+        .firefly{position:absolute;border-radius:50%;background:rgba(255,255,150,.6);animation:firefly 2s ease-in-out infinite;pointer-events:none}
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- HOME -->
+    <div id="page-home" class="page active">
+        <div class="header">
+            <div class="header-left"><h2 id="greeting">좋은 아침!</h2><div class="date" id="currentDate"></div></div>
+            <div class="phase-badge" id="phaseBadge">적응기</div>
+        </div>
+
+        <div class="garden-card" id="gardenCard">
+            <svg id="gardenSvg" class="garden-svg" viewBox="0 0 480 280" preserveAspectRatio="xMidYMid slice"></svg>
+            <div class="garden-msg" id="gardenMsg">오늘도 정원을 가꿔볼까?</div>
+            <div class="garden-info">
+                <div class="garden-title" id="gardenTitle">씨앗을 심은 정원</div>
+                <div class="garden-sub" id="gardenSub">Lv.1</div>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card"><div class="stat-value" id="ringPct">0%</div><div class="stat-label">오늘 달성률</div></div>
+            <div class="stat-card"><div class="stat-value" id="streakDays">0일</div><div class="stat-label">연속 달성</div></div>
+            <div class="stat-card"><div class="stat-value" id="dayCountHome">Day 1</div><div class="stat-label">진행일</div></div>
+        </div>
+
+        <div class="seed-bar">
+            <div class="seed-bar-header"><span class="seed-bar-title">🌱 성장 포인트</span><span class="seed-bar-count" id="xpText">0 / 50</span></div>
+            <div class="seed-track"><div class="seed-fill" id="xpBar" style="width:0%"></div></div>
+        </div>
+
+        <div class="mini-cards" id="miniCards"></div>
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">오늘의 흐름</h3>
+        <div class="timeline" id="dailyTimeline"></div>
+        <div class="phase-card" id="phaseCard"></div>
+    </div>
+
+    <!-- HABITS -->
+    <div id="page-habits" class="page">
+        <div class="habit-day-header"><div class="habit-day-title" id="habitDayTitle">월요일</div><div class="habit-day-count" id="habitDayCount">0/0</div></div>
+        <div class="rest-day-bar"><div class="label">😴 오늘 쉬는 날</div><div class="rest-toggle" id="restToggle" onclick="toggleRestDay()"></div></div>
+        <div id="restReasonWrap" style="display:none"><div class="rest-reason"><input id="restReasonInput" placeholder="사유 (선택)" oninput="saveRestReason()"></div></div>
+        <div id="habitList"></div>
+        <div style="margin-top:20px">
+            <div class="journal-card"><h3>📝 오늘 할 일</h3><textarea class="journal-textarea" id="todoInput" placeholder="오늘 집중할 것들..."></textarea></div>
+            <div class="journal-card"><h3>🙏 감사일기</h3><textarea class="journal-textarea" id="gratitudeInput" placeholder="오늘 감사한 것 3가지..."></textarea></div>
+        </div>
+    </div>
+
+    <!-- GOALS -->
+    <div id="page-goals" class="page">
+        <h2 class="page-title">🎯 목표</h2>
+        <div class="big-progress" id="bigProgress"></div>
+        <div class="goal-section"><div class="goal-section-header"><div class="goal-section-title">🏔️ 6개월 목표</div><div class="goal-section-edit" onclick="openModal('bigGoals')">편집</div></div><div id="bigGoalsList"></div></div>
+        <div class="goal-section"><div class="goal-section-header"><div class="goal-section-title">📅 이번 달</div><div class="goal-section-edit" onclick="openModal('monthlyGoals')">편집</div></div><div id="monthlyGoalsList"></div></div>
+        <div class="goal-section"><div class="goal-section-header"><div class="goal-section-title">📌 이번 주</div><div class="goal-section-edit" onclick="openModal('weeklyGoals')">편집</div></div><div id="weeklyGoalsList"></div></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div id="page-insights" class="page">
+        <h2 class="page-title">📊 인사이트</h2>
+        <div class="insight-tabs"><button class="insight-tab active" onclick="setInsightPeriod('week',this)">이번 주</button><button class="insight-tab" onclick="setInsightPeriod('month',this)">이번 달</button><button class="insight-tab" onclick="setInsightPeriod('all',this)">전체</button></div>
+        <div class="insight-card"><h3>📊 달성률</h3><div class="weekly-bars" id="periodBars"></div></div>
+        <div class="insight-card"><h3>🏃 러닝</h3><div class="running-stats" id="runningStats"></div></div>
+        <div class="insight-card"><h3>📈 카테고리별</h3><div class="category-bars" id="categoryBars"></div></div>
+        <div class="insight-card"><h3>🌳 정원 성장</h3><div class="garden-timeline" id="gardenTimeline"></div></div>
+        <div class="insight-card"><h3>🟩 히트맵</h3><div class="heatmap" id="heatmap"></div></div>
+        <div class="insight-card"><h3>🏅 리포트</h3><div id="periodReport"></div></div>
+        <div class="insight-card"><h3>🔥 습관별 스트릭</h3><div id="habitStreaks"></div></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" class="page">
+        <h2 class="page-title">⚙ 설정</h2>
+        <div class="settings-card"><h3>습관 관리</h3><div id="habitManager"></div><button class="btn" style="width:100%;margin-top:10px" onclick="openModal('addHabit')">+ 습관 추가</button></div>
+        <div class="settings-card"><h3>챌린지 기간</h3><div class="settings-row"><input type="number" class="settings-input" id="challengeDaysInput" min="7" max="365" style="width:80px" onchange="saveChallengeDays()"><span style="font-size:14px;color:var(--text-sub);margin-left:8px">일</span></div></div>
+        <div class="settings-card"><h3>챌린지 시작일</h3><input type="date" class="settings-input" id="startDateInput" onchange="saveStartDate()"></div>
+        <div class="settings-card"><h3>정원 이름</h3><input type="text" class="settings-input" id="gardenNameInput" placeholder="나의 작은 정원" onchange="saveGardenName()"></div>
+        <div class="settings-card"><h3>현재 읽는 책</h3><input type="text" class="settings-input" id="bookInput" placeholder="책 제목" onchange="saveBook()"></div>
+        <div class="settings-card"><h3>홈트 영상 링크</h3><div id="workoutLinksC"></div><div class="settings-row"><input class="settings-input" id="newWorkoutLink" placeholder="유튜브 링크"><button class="btn btn-sm" onclick="addLink('workout')">추가</button></div></div>
+        <div class="settings-card"><h3>영어 학습 링크</h3><div id="englishLinksC"></div><div class="settings-row"><input class="settings-input" id="newEnglishLink" placeholder="유튜브 링크"><button class="btn btn-sm" onclick="addLink('english')">추가</button></div></div>
+        <div class="settings-card"><h3>타임라인 시간 설정</h3><div id="timelineSettings"></div><button class="btn-outline btn-sm" style="width:100%;margin-top:10px" onclick="addTimelineItem()">+ 시간대 추가</button></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()"><div class="modal" id="modalContent"></div></div>
+<div class="celebration" id="celebration"><div class="celebration-emoji" id="celebEmoji">🌸</div></div>
+
+<div class="bottom-nav">
+    <div class="nav-item active" onclick="switchPage('home',this)"><span class="nav-icon">🌿</span><span>정원</span></div>
+    <div class="nav-item" onclick="switchPage('habits',this)"><span class="nav-icon">✓</span><span>습관</span></div>
+    <div class="nav-item" onclick="switchPage('goals',this)"><span class="nav-icon">🎯</span><span>목표</span></div>
+    <div class="nav-item" onclick="switchPage('insights',this)"><span class="nav-icon">📊</span><span>인사이트</span></div>
+    <div class="nav-item" onclick="switchPage('settings',this)"><span class="nav-icon">⚙</span><span>설정</span></div>
+</div>
+
+<script>
+const DEFAULT_HABITS = [
+    {id:'meditation',name:'명상',cat:'마인드',detail:'5분',days:[1,2,3,4,5]},
+    {id:'workout',name:'홈트',cat:'몸',detail:'자세교정+전신',days:[1,3,5],hasLink:true},
+    {id:'running',name:'러닝',cat:'몸',days:[2,4],hasInput:true,unit:'km'},
+    {id:'english-shadow',name:'영어 쉐도잉',cat:'스킬',detail:'투브로크걸스',days:[1,3,5]},
+    {id:'english-grammar',name:'영어 문법',cat:'스킬',days:[2,4],hasProgress:true},
+    {id:'japanese',name:'듀오링고 일본어',cat:'스킬',detail:'5~10분',days:[1,2,3,4,5]},
+    {id:'marketing',name:'마케팅 아티클',cat:'성장',detail:'1개',days:[1,2,3,4,5]},
+    {id:'reels-plan',name:'릴스 기획/소재',cat:'콘텐츠',days:[1,4]},
+    {id:'reels-shoot',name:'릴스 촬영',cat:'콘텐츠',days:[2,5]},
+    {id:'reels-edit',name:'릴스 편집',cat:'콘텐츠',days:[3]},
+    {id:'income-shop',name:'쇼핑영상',cat:'수익',days:[1,3]},
+    {id:'income-thread',name:'스레드 운영',cat:'수익',days:[2,4]},
+    {id:'income-coupang',name:'쿠팡 정리',cat:'수익',days:[5]},
+    {id:'planning',name:'기획 연습',cat:'성장',detail:'레퍼런스',days:[3]},
+    {id:'reading',name:'독서',cat:'성장',detail:'30분',days:[2,4,6]},
+    {id:'work-block',name:'업무 블록',cat:'생활',detail:'12~20시',days:[1,2,3,4,5]},
+    {id:'morning',name:'9시 기상',cat:'생활',days:[1,2,3,4,5]},
+    {id:'diet',name:'식단 관리',cat:'몸',days:[1,2,3,4,5]},
+    {id:'laundry',name:'빨래',cat:'집안일',days:[1]},
+    {id:'cleaning',name:'청소',cat:'집안일',days:[3]},
+    {id:'organize',name:'정리+장보기',cat:'집안일',days:[5]},
+    {id:'free-workout',name:'자유 운동',cat:'몸',detail:'산책/스포츠',days:[6]},
+    {id:'hobby',name:'취미 탐색',cat:'라이프',days:[6]},
+    {id:'weekly-review',name:'다음 주 훑어보기',cat:'생활',detail:'5분',days:[0]},
+];
+
+const DEFAULT_TIMELINE = [
+    {time:'09:00',label:'기상 + 명상'},{time:'09:30',label:'운동'},{time:'10:30',label:'영어'},
+    {time:'11:00',label:'점심 준비'},{time:'12:00',label:'업무 파트1 — 크리에이티브'},
+    {time:'15:00',label:'휴식 + 산책'},{time:'16:00',label:'업무 파트2 — 실행'},
+    {time:'20:00',label:'자유시간'},{time:'22:00',label:'감사일기 + 정리'},
+];
+
+const DEFAULT_BIG_GOALS = [
+    {id:'weight',name:'체중',current:62,target:52,unit:'kg',color:'#E57373'},
+    {id:'followers',name:'팔로워',current:0,target:10000,unit:'명',color:'#F06292'},
+    {id:'income',name:'월수입',current:30,target:1000,unit:'만원',color:'#66BB6A'},
+    {id:'running',name:'러닝 거리',current:2,target:5,unit:'km',color:'#42A5F5'},
+    {id:'english',name:'영어 문법',current:0,target:30,unit:'강',color:'#FFB74D'},
+];
+
+const CATEGORIES=['몸','스킬','콘텐츠','수익','마인드','성장'];
+const CAT_COLORS={'몸':'#E57373','스킬':'#42A5F5','콘텐츠':'#F06292','수익':'#66BB6A','마인드':'#AB47BC','성장':'#FFB74D','생활':'#78909C','집안일':'#8D6E63','라이프':'#26C6DA'};
+
+// Garden stages - from bare soil to enchanted forest
+const STAGES=[
+    {minLv:1,title:'씨앗을 심은 정원',plants:2,skyTop:'#E8D5B7',skyBot:'#F5E6D3',groundColor:'#8B7355',grassColor:'#9CAF88',msgs:['첫 씨앗을 심었어','작은 시작이 큰 숲이 돼','오늘 하나만 심어보자']},
+    {minLv:3,title:'새싹이 돋는 정원',plants:5,skyTop:'#87CEEB',skyBot:'#E0F0FF',groundColor:'#6B8E50',grassColor:'#8FBC6B',msgs:['새싹이 보여!','꾸준히 물 주고 있네','작은 잎이 나오고 있어']},
+    {minLv:6,title:'초록이 퍼지는 정원',plants:8,skyTop:'#7EC8E3',skyBot:'#C8E6FF',groundColor:'#5D8A3C',grassColor:'#7CB342',msgs:['정원이 초록으로 물들고 있어','네 노력이 자라고 있어','이 속도면 숲이 될 거야']},
+    {minLv:10,title:'꽃이 피기 시작한 정원',plants:12,skyTop:'#64B5F6',skyBot:'#BBDEFB',groundColor:'#4E7A30',grassColor:'#66BB6A',msgs:['첫 꽃이 피었어!','10레벨 돌파, 대단해','아름다운 정원이 되고 있어']},
+    {minLv:15,title:'만개한 꽃밭',plants:16,skyTop:'#5FA8D3',skyBot:'#B3E5FC',groundColor:'#3E6B20',grassColor:'#4CAF50',msgs:['꽃향기가 가득해','반도 왔어, 정원이 빛나','포기하지 않은 너 멋져']},
+    {minLv:22,title:'울창한 숲',plants:20,skyTop:'#4A90B8',skyBot:'#A5D6A7',groundColor:'#2E5A14',grassColor:'#388E3C',msgs:['숲이 됐어!','새들이 찾아오기 시작했어','이건 진짜 마법이야']},
+    {minLv:30,title:'마법의 숲',plants:25,skyTop:'#1A237E',skyBot:'#4A148C',groundColor:'#1B5E20',grassColor:'#2E7D32',msgs:['전설의 숲 완성!','기적을 만들었어','넌 이미 다른 사람이야']},
+];
+
+const PHASES=[
+    {name:'씨 뿌리기',icon:'🌱',desc:'습관의 씨앗을 심는 시기',weeks:[1,2]},
+    {name:'뿌리내리기',icon:'🌿',desc:'뿌리를 내리는 시기',weeks:[3,4]},
+    {name:'줄기 키우기',icon:'🌳',desc:'성장이 눈에 보이는 시기',weeks:[5,6,7,8]},
+    {name:'꽃피우기',icon:'🌺',desc:'열매가 맺히기 시작하는 시기',weeks:[9,10,11,12]},
+    {name:'숲 만들기',icon:'🏕️',desc:'한계를 넘어서는 시기',weeks:[13,14,15,16,17,18]},
+    {name:'마법의 숲',icon:'✨',desc:'새로운 나를 만나는 시기',weeks:[19,20,21,22,23,24,25,26]},
+];
+
+// Plant types per category
+const PLANT_TYPES={
+    '몸':{colors:['#E57373','#EF5350','#F44336'],type:'flower'},
+    '스킬':{colors:['#42A5F5','#64B5F6','#90CAF9'],type:'crystal'},
+    '콘텐츠':{colors:['#F06292','#EC407A','#E91E63'],type:'tulip'},
+    '수익':{colors:['#66BB6A','#81C784','#A5D6A7'],type:'tree'},
+    '마인드':{colors:['#AB47BC','#BA68C8','#CE93D8'],type:'lavender'},
+    '성장':{colors:['#FFB74D','#FFC107','#FFD54F'],type:'sunflower'},
+};
+
+let D=loadData();
+let insightPeriod='week';
+
+function loadData(){
+    const s=localStorage.getItem('habitGarden');
+    if(s){const d=JSON.parse(s);if(!d.challengeDays)d.challengeDays=180;if(!d.restDays)d.restDays={};if(!d.skips)d.skips={};if(!d.gardenName)d.gardenName='';return d;}
+    return {
+        startDate:new Date().toISOString().split('T')[0],
+        habits:DEFAULT_HABITS.map(h=>({...h})),
+        timeline:DEFAULT_TIMELINE.map(t=>({...t})),
+        bigGoals:DEFAULT_BIG_GOALS.map(g=>({...g})),
+        monthlyGoals:[{name:'릴스 8개 올리기',target:8,current:0},{name:'쇼핑수익 50만원',target:50,current:0},{name:'러닝 총 20km',target:20,current:0}],
+        weeklyGoals:[{name:'릴스 2개',target:2,current:0},{name:'홈트 3회',target:3,current:0},{name:'러닝 2회',target:2,current:0}],
+        checks:{},journals:{},links:{workout:[],english:[]},
+        book:'',xp:0,level:1,gardenName:'',englishProgress:0,running:{},
+        challengeDays:180,restDays:{},skips:{}
+    };
+}
+function save(){localStorage.setItem('habitGarden',JSON.stringify(D));}
+function td(){return new Date().toISOString().split('T')[0];}
+function dow(){return new Date().getDay();}
+function dayCount(){return Math.max(1,Math.floor((new Date(td())-new Date(D.startDate))/864e5)+1);}
+function weekCount(){return Math.ceil(dayCount()/7);}
+function xpFor(lv){return 50+(lv-1)*30;}
+function addXP(n){D.xp+=n;while(D.xp>=xpFor(D.level)){D.xp-=xpFor(D.level);D.level++;celebrate('🌸');}save();}
+function getStage(){let s=STAGES[0];for(const st of STAGES)if(D.level>=st.minLv)s=st;return s;}
+function getStageIdx(){let i=0;for(let j=0;j<STAGES.length;j++)if(D.level>=STAGES[j].minLv)i=j;return i;}
+function getPhase(){const w=weekCount();for(const p of PHASES)if(p.weeks.includes(w))return p;return PHASES[PHASES.length-1];}
+function getHabitsForDay(d){return D.habits.filter(h=>h.days.includes(d));}
+
+// ===== GARDEN SVG =====
+function renderGardenSVG(stage,pct){
+    const svg=document.getElementById('gardenSvg');
+    const isMagic=D.level>=30;
+    const isNight=new Date().getHours()>=20||new Date().getHours()<6;
+    const skyT=isNight?'#0D1B2A':stage.skyTop;
+    const skyB=isNight?'#1B2838':stage.skyBot;
+
+    let html=`<defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${skyT}"/>
+            <stop offset="100%" stop-color="${skyB}"/>
+        </linearGradient>
+        <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${stage.grassColor}"/>
+            <stop offset="100%" stop-color="${stage.groundColor}"/>
+        </linearGradient>
+    </defs>`;
+
+    // Sky
+    html+=`<rect width="480" height="280" fill="url(#sky)"/>`;
+
+    // Sun or Moon
+    if(isNight){
+        html+=`<circle cx="380" cy="50" r="20" fill="#F5F5DC" opacity=".9"/>
+               <circle cx="374" cy="46" r="16" fill="${skyT}"/>`;
+        // Stars
+        for(let i=0;i<15;i++){
+            const x=Math.random()*460+10,y=Math.random()*120+10,r=Math.random()*1.5+.5;
+            html+=`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${Math.random()*.5+.3}"/>`;
+        }
+    } else {
+        html+=`<circle cx="380" cy="55" r="30" fill="#FFE082" opacity=".8"/>
+               <circle cx="380" cy="55" r="24" fill="#FFF8E1" opacity=".5"/>`;
+    }
+
+    // Clouds
+    if(!isNight){
+        html+=`<g opacity=".6"><ellipse cx="100" cy="45" rx="40" ry="14" fill="#fff"/><ellipse cx="80" cy="45" rx="25" ry="10" fill="#fff"/><ellipse cx="125" cy="45" rx="25" ry="10" fill="#fff"/></g>`;
+        html+=`<g opacity=".4"><ellipse cx="300" cy="65" rx="35" ry="12" fill="#fff"/><ellipse cx="280" cy="65" rx="22" ry="9" fill="#fff"/></g>`;
+    }
+
+    // Hills
+    html+=`<ellipse cx="120" cy="210" rx="180" ry="60" fill="${stage.grassColor}" opacity=".5"/>`;
+    html+=`<ellipse cx="380" cy="215" rx="160" ry="55" fill="${stage.grassColor}" opacity=".4"/>`;
+
+    // Ground
+    html+=`<rect x="0" y="200" width="480" height="80" fill="url(#ground)"/>`;
+    html+=`<ellipse cx="240" cy="200" rx="260" ry="20" fill="${stage.grassColor}"/>`;
+
+    // Plants based on level and completion
+    const si=getStageIdx(); // 0=씨앗, 1=새싹, 2=초록, 3=꽃시작, 4=만개, 5=숲, 6=마법
+    const numPlants=Math.min(stage.plants, Math.ceil(stage.plants*Math.max(pct,.15)));
+    const spacing=440/(numPlants+1);
+
+    for(let i=0;i<numPlants;i++){
+        const x=20+spacing*(i+1)+Math.sin(i*2.5)*15;
+        const baseY=195+Math.sin(i*1.7)*8;
+        const catKeys=Object.keys(PLANT_TYPES);
+        const cat=catKeys[i%catKeys.length];
+        const pt=PLANT_TYPES[cat];
+        const sway=Math.sin(Date.now()/2000+i)*1.5;
+
+        if(si===0){
+            // 씨앗 단계: 흙 위에 씨앗만
+            html+=`<ellipse cx="${x}" cy="${baseY+2}" rx="6" ry="3" fill="#8D6E63" opacity=".6"/>`;
+            html+=`<ellipse cx="${x}" cy="${baseY}" rx="3.5" ry="2.5" fill="#A1887F"/>`;
+            html+=`<ellipse cx="${x+1}" cy="${baseY-1}" rx="1.5" ry="1" fill="#BCAAA4" opacity=".5"/>`;
+        } else if(si===1){
+            // 새싹 단계: 작은 줄기 + 아기잎 2개
+            const h=8+Math.random()*6;
+            html+=`<line x1="${x}" y1="${baseY}" x2="${x}" y2="${baseY-h}" stroke="#81C784" stroke-width="2" stroke-linecap="round"/>`;
+            html+=`<ellipse cx="${x-4}" cy="${baseY-h+2}" rx="4" ry="2.5" fill="#A5D6A7" transform="rotate(-30,${x-4},${baseY-h+2})"/>`;
+            html+=`<ellipse cx="${x+4}" cy="${baseY-h+2}" rx="4" ry="2.5" fill="#C8E6C9" transform="rotate(30,${x+4},${baseY-h+2})"/>`;
+        } else if(si===2){
+            // 줄기 단계: 긴 줄기 + 잎사귀, 꽃은 아직 없음
+            const h=20+Math.random()*12;
+            html+=`<line x1="${x}" y1="${baseY}" x2="${x+sway}" y2="${baseY-h}" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round"/>`;
+            const ly=baseY-h*.4;
+            html+=`<ellipse cx="${x-7}" cy="${ly}" rx="7" ry="3.5" fill="#66BB6A" transform="rotate(-20,${x-7},${ly})"/>`;
+            html+=`<ellipse cx="${x+7}" cy="${ly+4}" rx="6" ry="3" fill="#81C784" transform="rotate(25,${x+7},${ly+4})"/>`;
+            // 줄기 끝에 작은 봉오리
+            const fx=x+sway,fy=baseY-h;
+            html+=`<ellipse cx="${fx}" cy="${fy}" rx="3" ry="4" fill="#A5D6A7"/>`;
+        } else {
+            // 꽃 단계 이상 (si>=3): 줄기 + 잎 + 꽃
+            const h=25+Math.min(si*8,40)+Math.random()*10;
+            html+=`<line x1="${x}" y1="${baseY}" x2="${x+sway}" y2="${baseY-h}" stroke="#4CAF50" stroke-width="${si>=5?3:2.5}" stroke-linecap="round"/>`;
+
+            // 잎사귀 (높은 레벨일수록 많이)
+            const leafCount=si>=5?3:2;
+            for(let l=0;l<leafCount;l++){
+                const ly=baseY-h*(0.3+l*0.2);
+                const side=l%2===0?-1:1;
+                const lr=5+si;
+                html+=`<ellipse cx="${x+side*(lr-1)}" cy="${ly}" rx="${lr}" ry="${lr*.5}" fill="${l%2===0?'#66BB6A':'#81C784'}" transform="rotate(${side*-25},${x+side*(lr-1)},${ly})"/>`;
+            }
+
+            // 꽃/윗부분
+            const fx=x+sway,fy=baseY-h;
+            const flowerScale=si>=5?1.3:si>=4?1.1:0.9;
+            if(pt.type==='flower'){
+                for(let p=0;p<5;p++){const a=p/5*Math.PI*2-Math.PI/2;html+=`<circle cx="${fx+Math.cos(a)*6*flowerScale}" cy="${fy+Math.sin(a)*6*flowerScale}" r="${5*flowerScale}" fill="${pt.colors[0]}" opacity=".85"/>`;}
+                html+=`<circle cx="${fx}" cy="${fy}" r="${4*flowerScale}" fill="#FFE082"/>`;
+            } else if(pt.type==='tulip'){
+                const s=flowerScale;
+                html+=`<path d="M${fx-7*s},${fy+3} Q${fx},${fy-10*s} ${fx+7*s},${fy+3} Q${fx},${fy+1} ${fx-7*s},${fy+3}" fill="${pt.colors[0]}"/>`;
+            } else if(pt.type==='sunflower'){
+                for(let p=0;p<8;p++){const a=p/8*Math.PI*2;html+=`<ellipse cx="${fx+Math.cos(a)*7*flowerScale}" cy="${fy+Math.sin(a)*7*flowerScale}" rx="${5*flowerScale}" ry="${3*flowerScale}" fill="${pt.colors[0]}" transform="rotate(${p*45},${fx+Math.cos(a)*7*flowerScale},${fy+Math.sin(a)*7*flowerScale})"/>`;}
+                html+=`<circle cx="${fx}" cy="${fy}" r="${5*flowerScale}" fill="#5D4037"/>`;
+            } else if(pt.type==='lavender'){
+                for(let p=0;p<4;p++){html+=`<circle cx="${fx+Math.sin(p)*3}" cy="${fy-p*5*flowerScale}" r="${3.5*flowerScale}" fill="${pt.colors[p%3]}" opacity=".8"/>`;}
+            } else if(pt.type==='crystal'){
+                const s=flowerScale;
+                html+=`<polygon points="${fx},${fy-10*s} ${fx+6*s},${fy} ${fx-6*s},${fy}" fill="${pt.colors[0]}" opacity=".8"/>`;
+                html+=`<polygon points="${fx},${fy-10*s} ${fx+3*s},${fy-2} ${fx},${fy-4}" fill="#fff" opacity=".3"/>`;
+            } else {
+                // tree
+                const s=flowerScale;
+                html+=`<circle cx="${fx}" cy="${fy-5*s}" r="${12*s}" fill="${pt.colors[0]}"/>`;
+                html+=`<circle cx="${fx-6*s}" cy="${fy}" r="${9*s}" fill="${pt.colors[1]}"/>`;
+                html+=`<circle cx="${fx+6*s}" cy="${fy}" r="${9*s}" fill="${pt.colors[1]}"/>`;
+            }
+        }
+    }
+
+    // Grass blades
+    for(let i=0;i<30;i++){
+        const gx=Math.random()*460+10,gy=198+Math.random()*8;
+        const gh=8+Math.random()*10;
+        html+=`<line x1="${gx}" y1="${gy}" x2="${gx+Math.random()*4-2}" y2="${gy-gh}" stroke="${stage.grassColor}" stroke-width="1.5" opacity=".6" stroke-linecap="round"/>`;
+    }
+
+    // Fireflies for magic stage or night
+    if(isMagic||isNight){
+        for(let i=0;i<8;i++){
+            const fx2=Math.random()*440+20,fy2=50+Math.random()*140;
+            html+=`<circle cx="${fx2}" cy="${fy2}" r="2" fill="#FFFF8D" opacity=".6"><animate attributeName="opacity" values=".2;.8;.2" dur="${1.5+Math.random()*2}s" repeatCount="indefinite"/></circle>`;
+        }
+    }
+
+    // Butterflies for higher levels
+    if(D.level>=10){
+        for(let i=0;i<Math.min(3,Math.floor(D.level/8));i++){
+            const bx=80+i*150,by=60+i*30;
+            html+=`<g><animateTransform attributeName="transform" type="translate" values="0,0;${20+i*10},-10;0,0" dur="${3+i}s" repeatCount="indefinite"/>
+                <path d="M${bx},${by} Q${bx-8},${by-8} ${bx-3},${by} Q${bx-8},${by+8} ${bx},${by}" fill="#F48FB1" opacity=".7"/>
+                <path d="M${bx},${by} Q${bx+8},${by-8} ${bx+3},${by} Q${bx+8},${by+8} ${bx},${by}" fill="#F06292" opacity=".7"/>
+            </g>`;
+        }
+    }
+
+    svg.innerHTML=html;
+}
+
+// ===== RENDER =====
+function render(){renderHome();renderHabits();renderGoals();renderInsights();renderSettings();}
+
+function renderHome(){
+    const now=new Date(),h=now.getHours();
+    document.getElementById('greeting').textContent=h<12?'좋은 아침!':h<18?'파이팅!':'오늘도 수고했어!';
+    document.getElementById('currentDate').textContent=now.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+    document.getElementById('phaseBadge').textContent=getPhase().name;
+
+    const stage=getStage();
+    const habits=getHabitsForDay(dow()),td_=td();
+    if(!D.checks[td_])D.checks[td_]={};
+    const isRestHome=!!D.restDays[td_],skHome=D.skips[td_]||{};
+    const activeH=isRestHome?[]:habits.filter(x=>!skHome[x.id]);
+    const done=activeH.filter(x=>D.checks[td_][x.id]).length,total=activeH.length;
+    const pct=isRestHome?0:total?done/total:0;
+
+    renderGardenSVG(stage,pct);
+
+    document.getElementById('gardenTitle').textContent=D.gardenName||stage.title;
+    document.getElementById('gardenSub').textContent=`Lv.${D.level} — ${stage.title}`;
+    document.getElementById('gardenMsg').textContent=stage.msgs[Math.floor(Math.random()*stage.msgs.length)];
+    document.getElementById('ringPct').textContent=isRestHome?'😴':Math.round(pct*100)+'%';
+    document.getElementById('streakDays').textContent=calcStreak()+'일';
+    document.getElementById('dayCountHome').textContent=`Day ${dayCount()}`;
+
+    const xn=xpFor(D.level);
+    document.getElementById('xpBar').style.width=(D.xp/xn*100)+'%';
+    document.getElementById('xpText').textContent=`${D.xp} / ${xn} 🌱`;
+
+    // Mini cards
+    const mc=document.getElementById('miniCards'),cd={};
+    CATEGORIES.forEach(c=>{cd[c]={t:0,d:0};});
+    habits.forEach(x=>{if(cd[x.cat]){cd[x.cat].t++;if(D.checks[td_][x.id])cd[x.cat].d++;}});
+    const icons={'몸':'💪','스킬':'📚','콘텐츠':'🎬','수익':'💰','마인드':'🧘','성장':'🌱'};
+    mc.innerHTML=CATEGORIES.map(c=>{const v=cd[c],p=v.t?Math.round(v.d/v.t*100):0;return`<div class="mini-card"><div class="mini-card-icon">${icons[c]||'✓'}</div><div class="mini-card-title">${c}</div><div class="mini-card-progress"><div class="mini-card-progress-fill" style="width:${p}%;background:${CAT_COLORS[c]}"></div></div><div class="mini-card-stat">${v.d}/${v.t}</div></div>`;}).join('');
+
+    // Timeline
+    const tl=document.getElementById('dailyTimeline'),nowM=h*60+now.getMinutes();
+    let tlH='';
+    D.timeline.forEach((item,i)=>{
+        const [th,tm]=item.time.split(':').map(Number),im=th*60+tm;
+        const next=D.timeline[i+1],nm=next?parseInt(next.time)*60:1440;
+        let st=nowM>=nm?'done':nowM>=im?'current':'upcoming';
+        tlH+=`<div class="timeline-item"><div class="timeline-dot ${st}"></div><div class="timeline-card ${st==='current'?'current':''}"><div class="timeline-time">${item.time}</div><div class="timeline-name">${item.label}</div>${st==='current'?'<div class="timeline-now">← 지금</div>':''}</div></div>`;
+    });
+    tl.innerHTML=tlH;
+
+    const w=weekCount(),pp=getPhase(),ppw=pp.weeks,ppP=(w-ppw[0])/ppw.length*100;
+    document.getElementById('phaseCard').innerHTML=`<div class="phase-icon">${pp.icon}</div><div class="phase-info"><div class="phase-title">${pp.name}</div><div class="phase-desc">${pp.desc}</div><div class="phase-progress"><div class="phase-progress-fill" style="width:${Math.min(100,ppP)}%"></div></div></div>`;
+}
+
+function renderHabits(){
+    const d=dow(),days=['일','월','화','수','목','금','토'],habits=getHabitsForDay(d),t=td();
+    if(!D.checks[t])D.checks[t]={};
+    if(!D.skips[t])D.skips[t]={};
+    const isRest=!!D.restDays[t];
+    const active=habits.filter(x=>!D.skips[t][x.id]&&!isRest);
+    const done=active.filter(x=>D.checks[t][x.id]).length;
+    document.getElementById('habitDayTitle').textContent=days[d]+'요일';
+    document.getElementById('habitDayCount').textContent=isRest?'쉬는 날':`${done}/${active.length}`;
+    const rt=document.getElementById('restToggle');
+    rt.className='rest-toggle'+(isRest?' on':'');
+    document.getElementById('restReasonWrap').style.display=isRest?'block':'none';
+    if(isRest)document.getElementById('restReasonInput').value=typeof D.restDays[t]==='string'?D.restDays[t]:'';
+
+    const gr={};habits.forEach(x=>{if(!gr[x.cat])gr[x.cat]=[];gr[x.cat].push(x);});
+    let html='';
+    Object.entries(gr).forEach(([cat,items])=>{
+        html+=`<div class="habit-category"><div class="habit-category-title" style="color:${CAT_COLORS[cat]||'#666'}">${cat}</div>`;
+        items.forEach(h=>{
+            const ck=D.checks[t][h.id]||false;
+            const sk=D.skips[t][h.id]||isRest;
+            const cls=sk?'skipped':ck?'completed':'';
+            html+=`<div class="habit-item ${cls}">`;
+            if(sk)html+=`<div class="habit-check" style="border-color:var(--warning);color:var(--warning);font-size:11px;display:flex;align-items:center;justify-content:center">⏭</div>`;
+            else html+=`<div class="habit-check ${ck?'checked':''}" onclick="toggleHabit('${h.id}')"></div>`;
+            html+=`<div class="habit-item-info"><div class="habit-item-name">${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
+            if(!isRest)html+=`<div class="skip-btn ${sk?'active':''}" onclick="toggleSkip('${h.id}')">${sk?'스킵됨':'스킵'}</div>`;
+            if(h.hasInput&&!sk)html+=`<div><input class="habit-input" type="number" step="0.1" value="${D.running[t]||''}" onchange="saveRunning(this.value)" placeholder="0"><span class="habit-input-unit">${h.unit}</span></div>`;
+            html+=`</div>`;
+        });
+        html+='</div>';
+    });
+    document.getElementById('habitList').innerHTML=html;
+    if(!D.journals[t])D.journals[t]={};
+    document.getElementById('todoInput').value=D.journals[t].todo||'';
+    document.getElementById('gratitudeInput').value=D.journals[t].gratitude||'';
+}
+
+function renderGoals(){
+    const dc=dayCount(),cd=D.challengeDays;
+    document.getElementById('bigProgress').innerHTML=`<h3>🌳 ${cd}일 챌린지 진행률</h3><div class="big-progress-bar"><div class="big-progress-fill" style="width:${Math.min(100,dc/cd*100)}%"></div></div><div class="big-progress-text"><span>Day ${dc}</span><span>${Math.round(dc/cd*100)}%</span><span>${cd}일</span></div>`;
+    document.getElementById('bigGoalsList').innerHTML=D.bigGoals.map(g=>{
+        let displayPct;
+        if(g.id==='weight')displayPct=g.current<=g.target?100:Math.min(100,Math.round((62-g.current)/(62-g.target)*100));
+        else displayPct=Math.min(100,Math.round(g.current/g.target*100));
+        return`<div class="goal-card"><div class="goal-top"><div class="goal-name">${g.name}</div><div class="goal-nums">${g.current} / ${g.target}${g.unit}</div></div><div class="goal-bar"><div class="goal-bar-fill" style="width:${Math.max(0,displayPct)}%;background:${g.color}"></div></div></div>`;
+    }).join('');
+    document.getElementById('monthlyGoalsList').innerHTML=D.monthlyGoals.map((g,i)=>{
+        const pct=g.target?Math.min(100,Math.round(g.current/g.target*100)):0;
+        return`<div class="goal-check-item"><div class="goal-check-info"><div class="goal-check-name">${g.name}</div><div class="goal-check-progress">${g.current} / ${g.target}</div><div class="goal-check-bar"><div class="goal-check-bar-fill" style="width:${pct}%;background:var(--primary)"></div></div></div><input class="habit-input" type="number" value="${g.current}" onchange="updateGoalCurrent('monthly',${i},this.value)" style="width:48px"></div>`;
+    }).join('');
+    document.getElementById('weeklyGoalsList').innerHTML=D.weeklyGoals.map((g,i)=>{
+        const pct=g.target?Math.min(100,Math.round(g.current/g.target*100)):0;
+        return`<div class="goal-check-item"><div class="goal-check-info"><div class="goal-check-name">${g.name}</div><div class="goal-check-progress">${g.current} / ${g.target}</div><div class="goal-check-bar"><div class="goal-check-bar-fill" style="width:${pct}%;background:var(--success)"></div></div></div><input class="habit-input" type="number" value="${g.current}" onchange="updateGoalCurrent('weekly',${i},this.value)" style="width:48px"></div>`;
+    }).join('');
+}
+
+function renderInsights(){renderPeriodBars();renderRunning();renderCatBars();renderGardenEvo();renderHeatmap();renderReport();renderStreaks();}
+
+function renderPeriodBars(){
+    const bars=document.getElementById('periodBars');
+    const labels=insightPeriod==='week'?['월','화','수','목','금','토','일']:insightPeriod==='month'?['1주','2주','3주','4주']:['1월','2월','3월','4월','5월','6월'];
+    const colors=['#66BB6A','#81C784','#A5D6A7','#4CAF50','#388E3C','#2E7D32','#43A047'];
+    if(insightPeriod==='week'){
+        const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);let h='';
+        for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=date.toISOString().split('T')[0];const c=ds>td()?0:compForDate(ds);const isR=c===-1;const pct=isR?0:Math.round(c*100);h+=`<div class="weekly-bar-col"><div class="weekly-bar-pct">${isR?'😴':pct+'%'}</div><div class="weekly-bar" style="height:${isR?4:Math.max(4,pct)}%;background:${isR?'#FFB74D':colors[i]}"></div><div class="weekly-bar-label">${labels[i]}</div></div>`;}
+        bars.innerHTML=h;
+    } else if(insightPeriod==='month'){
+        const now=new Date(),year=now.getFullYear(),month=now.getMonth();let h='';
+        for(let w=0;w<4;w++){let total=0,count=0;for(let d=w*7;d<(w+1)*7&&d<31;d++){const date=new Date(year,month,d+1);const ds=date.toISOString().split('T')[0];if(ds>td())break;const c=compForDate(ds);if(c>=0){total+=c;count++;}}const avg=count?Math.round(total/count*100):0;h+=`<div class="weekly-bar-col"><div class="weekly-bar-pct">${avg}%</div><div class="weekly-bar" style="height:${Math.max(4,avg)}%;background:${colors[w]}"></div><div class="weekly-bar-label">${labels[w]}</div></div>`;}
+        bars.innerHTML=h;
+    } else {
+        const start=new Date(D.startDate);let h='';
+        for(let m=0;m<6;m++){let total=0,count=0;for(let d=0;d<30;d++){const date=new Date(start);date.setDate(start.getDate()+m*30+d);const ds=date.toISOString().split('T')[0];if(ds>td())break;const c=compForDate(ds);if(c>=0){total+=c;count++;}}const avg=count?Math.round(total/count*100):0;h+=`<div class="weekly-bar-col"><div class="weekly-bar-pct">${avg}%</div><div class="weekly-bar" style="height:${Math.max(4,avg)}%;background:${colors[m]}"></div><div class="weekly-bar-label">${labels[m]}</div></div>`;}
+        bars.innerHTML=h;
+    }
+}
+
+function renderRunning(){
+    let totalKm=0,runDays=0;Object.values(D.running).forEach(v=>{if(v>0){totalKm+=v;runDays++;}});
+    document.getElementById('runningStats').innerHTML=`<div class="running-stat"><div class="running-stat-value">${totalKm.toFixed(1)}</div><div class="running-stat-label">총 거리 (km)</div></div><div class="running-stat"><div class="running-stat-value">${runDays}</div><div class="running-stat-label">러닝 횟수</div></div><div class="running-stat"><div class="running-stat-value">${runDays?(totalKm/runDays).toFixed(1):'0'}</div><div class="running-stat-label">평균 (km)</div></div>`;
+}
+
+function renderCatBars(){
+    const cb=document.getElementById('categoryBars'),stats=getCatStats();
+    cb.innerHTML=CATEGORIES.map(c=>`<div class="cat-bar-row"><div class="cat-bar-label">${c}</div><div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${stats[c]||0}%;background:${CAT_COLORS[c]}"></div></div><div class="cat-bar-pct">${stats[c]||0}%</div></div>`).join('');
+}
+
+function renderGardenEvo(){
+    const evo=document.getElementById('gardenTimeline'),si=getStageIdx();
+    const stageIcons=['🌰','🌱','☘️','🌷','🌺','🌳','✨'];
+    evo.innerHTML=STAGES.map((s,i)=>{
+        const cls=i<si?'reached':i===si?'current':'';
+        return`${i>0?'<span class="evo-arrow">→</span>':''}<div class="garden-stage ${cls}"><span style="font-size:24px">${stageIcons[i]}</span><div class="garden-stage-label">Lv.${s.minLv}</div></div>`;
+    }).join('');
+}
+
+function renderHeatmap(){
+    const hm=document.getElementById('heatmap');let h='';const start=new Date(D.startDate);
+    for(let i=0;i<Math.min(dayCount(),D.challengeDays);i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=d.toISOString().split('T')[0];const c=compForDate(ds);let l='';if(c===-1)l='rest';else if(c>.8)l='l4';else if(c>.6)l='l3';else if(c>.3)l='l2';else if(c>0)l='l1';h+=`<div class="heatmap-cell ${l}"></div>`;}
+    hm.innerHTML=h;
+}
+
+function renderReport(){
+    const r=document.getElementById('periodReport'),wd=getWeekData();
+    r.innerHTML=`<div class="insight-row"><span class="insight-label">평균 달성률</span><span class="insight-value">${wd.avgPct}%</span></div><div class="insight-row"><span class="insight-label">최고의 날</span><span class="insight-value">${wd.bestDay}</span></div><div class="insight-row"><span class="insight-label">획득 성장 포인트</span><span class="insight-value">${wd.weekXP} 🌱</span></div><div class="insight-row"><span class="insight-label">현재 레벨</span><span class="insight-value">Lv.${D.level}</span></div>`;
+}
+
+function renderStreaks(){
+    const st=document.getElementById('habitStreaks');
+    const allH=D.habits.filter(h=>h.days.some(d=>d>=1&&d<=5));
+    st.innerHTML=allH.slice(0,12).map(h=>`<div class="insight-row"><span class="insight-label">${h.name}</span><span class="insight-value">${calcHabitStreak(h.id)}일</span></div>`).join('');
+}
+
+function renderSettings(){
+    document.getElementById('challengeDaysInput').value=D.challengeDays;
+    document.getElementById('startDateInput').value=D.startDate;
+    document.getElementById('gardenNameInput').value=D.gardenName||'';
+    document.getElementById('bookInput').value=D.book||'';
+    ['workout','english'].forEach(type=>{
+        document.getElementById(type+'LinksC').innerHTML=(D.links[type]||[]).map((u,i)=>`<div class="link-item"><a href="${u}" target="_blank">${u}</a><span class="link-remove" onclick="removeLink('${type}',${i})">삭제</span></div>`).join('');
+    });
+    const hm=document.getElementById('habitManager'),dayNames=['일','월','화','수','목','금','토'];
+    hm.innerHTML=D.habits.map((h,i)=>`<div class="habit-mgr-item"><div class="habit-mgr-name" onclick="openModal('editHabit',${i})" style="cursor:pointer;flex:1">${h.name}</div><div class="habit-mgr-days">${h.days.map(d=>dayNames[d]).join(',')}</div><span style="color:var(--primary);font-size:13px;cursor:pointer;margin-right:8px" onclick="openModal('editHabit',${i})">편집</span><span class="habit-mgr-del" onclick="deleteHabit(${i})">삭제</span></div>`).join('');
+    const ts=document.getElementById('timelineSettings');
+    ts.innerHTML=D.timeline.map((t,i)=>`<div class="settings-row"><input class="settings-input" type="time" value="${t.time}" onchange="updateTimeline(${i},'time',this.value)" style="width:100px"><input class="settings-input" value="${t.label}" onchange="updateTimeline(${i},'label',this.value)" style="flex:1"><span class="habit-mgr-del" onclick="deleteTimelineItem(${i})" style="cursor:pointer">삭제</span></div>`).join('');
+}
+
+// ===== ACTIONS =====
+function toggleHabit(id){
+    const t=td();if(!D.checks[t])D.checks[t]={};
+    const was=D.checks[t][id];D.checks[t][id]=!was;
+    if(!was){addXP(10);if(id==='english-grammar')D.englishProgress=Math.min(30,(D.englishProgress||0)+1);}
+    else D.xp=Math.max(0,D.xp-10);
+    save();render();
+}
+function saveRunning(v){const t=td();D.running[t]=parseFloat(v)||0;if(D.running[t]>0){if(!D.checks[t])D.checks[t]={};D.checks[t].running=true;addXP(10);}save();render();}
+document.addEventListener('input',e=>{const t=td();if(!D.journals[t])D.journals[t]={};if(e.target.id==='todoInput'){D.journals[t].todo=e.target.value;save();}if(e.target.id==='gratitudeInput'){D.journals[t].gratitude=e.target.value;save();}});
+function updateGoalCurrent(type,idx,val){if(type==='monthly')D.monthlyGoals[idx].current=parseFloat(val)||0;if(type==='weekly')D.weeklyGoals[idx].current=parseFloat(val)||0;save();renderGoals();}
+function addLink(type){const input=document.getElementById(type==='workout'?'newWorkoutLink':'newEnglishLink');if(input.value.trim()){D.links[type].push(input.value.trim());input.value='';save();renderSettings();}}
+function removeLink(type,i){D.links[type].splice(i,1);save();renderSettings();}
+function saveStartDate(){D.startDate=document.getElementById('startDateInput').value;save();render();}
+function saveGardenName(){D.gardenName=document.getElementById('gardenNameInput').value;save();render();}
+function saveBook(){D.book=document.getElementById('bookInput').value;save();}
+function updateTimeline(i,key,val){D.timeline[i][key]=val;D.timeline.sort((a,b)=>a.time.localeCompare(b.time));save();render();}
+function addTimelineItem(){D.timeline.push({time:'12:00',label:'새 일정'});D.timeline.sort((a,b)=>a.time.localeCompare(b.time));save();render();}
+function deleteTimelineItem(i){D.timeline.splice(i,1);save();render();}
+function saveChallengeDays(){const v=parseInt(document.getElementById('challengeDaysInput').value);if(v>=7&&v<=365){D.challengeDays=v;save();render();}}
+function deleteHabit(i){if(confirm(D.habits[i].name+' 삭제할까요?')){D.habits.splice(i,1);save();render();}}
+function toggleRestDay(){const t=td();if(D.restDays[t])delete D.restDays[t];else D.restDays[t]=true;save();render();}
+function saveRestReason(){const t=td();D.restDays[t]=document.getElementById('restReasonInput').value||true;save();}
+function toggleSkip(id){const t=td();if(!D.skips[t])D.skips[t]={};if(D.skips[t][id])delete D.skips[t][id];else D.skips[t][id]=true;save();render();}
+function setInsightPeriod(p,el){insightPeriod=p;document.querySelectorAll('.insight-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderInsights();}
+
+// ===== MODALS =====
+function openModal(type,arg){
+    const m=document.getElementById('modalContent'),o=document.getElementById('modalOverlay');
+    const dayNames=['일','월','화','수','목','금','토'];
+    if(type==='editHabit'){
+        const h=D.habits[arg];
+        m.innerHTML=`<h3>습관 수정</h3>
+            <div class="modal-field"><label>이름</label><input id="mEditName" value="${h.name}"></div>
+            <div class="modal-field"><label>카테고리</label><select id="mEditCat">${Object.keys(CAT_COLORS).map(c=>`<option${c===h.cat?' selected':''}>${c}</option>`).join('')}</select></div>
+            <div class="modal-field"><label>상세</label><input id="mEditDetail" value="${h.detail||''}" placeholder="선택사항"></div>
+            <div class="modal-field"><label>요일</label><div class="day-toggles" id="mEditDays">${dayNames.map((d,i)=>`<div class="day-toggle${h.days.includes(i)?' active':''}" data-day="${i}" onclick="this.classList.toggle('active')">${d}</div>`).join('')}</div></div>
+            <div class="modal-actions"><button class="btn" onclick="saveEditHabit(${arg})">저장</button><button class="btn-outline" onclick="closeModal()">취소</button></div>`;
+    }
+    else if(type==='addHabit'){
+        m.innerHTML=`<h3>습관 추가</h3>
+            <div class="modal-field"><label>이름</label><input id="mHabitName"></div>
+            <div class="modal-field"><label>카테고리</label><select id="mHabitCat">${Object.keys(CAT_COLORS).map(c=>`<option>${c}</option>`).join('')}</select></div>
+            <div class="modal-field"><label>상세</label><input id="mHabitDetail" placeholder="선택사항"></div>
+            <div class="modal-field"><label>요일</label><div class="day-toggles" id="mHabitDays">${dayNames.map((d,i)=>`<div class="day-toggle" data-day="${i}" onclick="this.classList.toggle('active')">${d}</div>`).join('')}</div></div>
+            <div class="modal-actions"><button class="btn" onclick="saveNewHabit()">추가</button><button class="btn-outline" onclick="closeModal()">취소</button></div>`;
+    }
+    else if(type==='bigGoals'){
+        m.innerHTML=`<h3>6개월 목표 편집</h3>${D.bigGoals.map((g,i)=>`<div class="goal-edit-row"><label>${g.name}</label><input type="number" value="${g.current}" onchange="D.bigGoals[${i}].current=parseFloat(this.value);save();renderGoals()"><span style="font-size:12px;color:var(--text-sub)">/ ${g.target}${g.unit}</span></div>`).join('')}<div class="modal-actions"><button class="btn" onclick="closeModal()">완료</button></div>`;
+    }
+    else if(type==='monthlyGoals'){
+        m.innerHTML=`<h3>이번 달 목표 편집</h3>${D.monthlyGoals.map((g,i)=>`<div class="goal-edit-row"><input value="${g.name}" onchange="D.monthlyGoals[${i}].name=this.value;save()"><input type="number" value="${g.target}" style="width:60px" onchange="D.monthlyGoals[${i}].target=parseFloat(this.value);save()"></div>`).join('')}<button class="btn-outline btn-sm" onclick="D.monthlyGoals.push({name:'새 목표',target:1,current:0});save();openModal('monthlyGoals')">+ 추가</button><div class="modal-actions"><button class="btn" onclick="closeModal();renderGoals()">완료</button></div>`;
+    }
+    else if(type==='weeklyGoals'){
+        m.innerHTML=`<h3>이번 주 목표 편집</h3>${D.weeklyGoals.map((g,i)=>`<div class="goal-edit-row"><input value="${g.name}" onchange="D.weeklyGoals[${i}].name=this.value;save()"><input type="number" value="${g.target}" style="width:60px" onchange="D.weeklyGoals[${i}].target=parseFloat(this.value);save()"></div>`).join('')}<button class="btn-outline btn-sm" onclick="D.weeklyGoals.push({name:'새 목표',target:1,current:0});save();openModal('weeklyGoals')">+ 추가</button><div class="modal-actions"><button class="btn" onclick="closeModal();renderGoals()">완료</button></div>`;
+    }
+    o.classList.add('show');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show');}
+function saveNewHabit(){const name=document.getElementById('mHabitName').value;if(!name)return;const cat=document.getElementById('mHabitCat').value;const detail=document.getElementById('mHabitDetail').value;const days=[...document.querySelectorAll('#mHabitDays .day-toggle.active')].map(el=>parseInt(el.dataset.day));if(!days.length)return;D.habits.push({id:'custom-'+Date.now(),name,cat,detail,days});save();closeModal();render();}
+function saveEditHabit(idx){const name=document.getElementById('mEditName').value;if(!name)return;const cat=document.getElementById('mEditCat').value;const detail=document.getElementById('mEditDetail').value;const days=[...document.querySelectorAll('#mEditDays .day-toggle.active')].map(el=>parseInt(el.dataset.day));if(!days.length)return;D.habits[idx].name=name;D.habits[idx].cat=cat;D.habits[idx].detail=detail;D.habits[idx].days=days;save();closeModal();render();}
+
+// ===== HELPERS =====
+function compForDate(ds){if(D.restDays[ds])return -1;const d=D.checks[ds];if(!d)return 0;const date=new Date(ds);const sk=D.skips[ds]||{};const h=getHabitsForDay(date.getDay()).filter(x=>!sk[x.id]);if(!h.length)return 0;return h.filter(x=>d[x.id]).length/h.length;}
+function calcStreak(){let s=0,d=new Date();for(let i=0;i<D.challengeDays;i++){const ds=d.toISOString().split('T')[0];const c=compForDate(ds);if(c===-1)s++;else if(c>=.7)s++;else if(i>0)break;d.setDate(d.getDate()-1);}return s;}
+function calcHabitStreak(hid){let s=0,d=new Date();for(let i=0;i<D.challengeDays;i++){const ds=d.toISOString().split('T')[0];const dw=d.getDay();const h=getHabitsForDay(dw);if(h.some(x=>x.id===hid)){if(D.checks[ds]&&D.checks[ds][hid])s++;else break;}d.setDate(d.getDate()-1);}return s;}
+function getWeekData(){const days=['일','월','화','수','목','금','토'];let tp=0,cnt=0,bp=0,bd='-',wx=0;const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=date.toISOString().split('T')[0];if(ds>td())break;const c=compForDate(ds);if(c>=0){tp+=c;cnt++;if(c>bp){bp=c;bd=days[date.getDay()];}const h=getHabitsForDay(date.getDay());const dd=D.checks[ds]||{};wx+=h.filter(x=>dd[x.id]).length*10;}}return{avgPct:cnt?Math.round(tp/cnt*100):0,bestDay:bd,weekXP:wx};}
+function getCatStats(){const s={};CATEGORIES.forEach(c=>{s[c]={t:0,d:0};});const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=date.toISOString().split('T')[0];if(ds>td())break;const h=getHabitsForDay(date.getDay());const dd=D.checks[ds]||{};h.forEach(x=>{if(s[x.cat]){s[x.cat].t++;if(dd[x.id])s[x.cat].d++;}});}const r={};CATEGORIES.forEach(c=>{r[c]=s[c].t?Math.round(s[c].d/s[c].t*100):0;});return r;}
+function celebrate(e){const el=document.getElementById('celebration');document.getElementById('celebEmoji').textContent=e;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1200);}
+function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');render();}
+
+render();
+</script>
+</body>
+</html>
