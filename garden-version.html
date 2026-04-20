@@ -1084,19 +1084,9 @@ function toggleHabit(id){
 }
 function updateHabitTime(id,v){const h=D.habits.find(x=>x.id===id);if(h&&v){h.time=v;save();render();}}
 function updateTaskTime(idx,v){const t=vd();if(D.dailyTasks&&D.dailyTasks[t]&&D.dailyTasks[t][idx]&&v){D.dailyTasks[t][idx].time=v;save();render();}}
-function _openTimePicker(initial,onSet){
-    const inp=document.createElement('input');
-    inp.type='time';inp.value=initial||'12:00';
-    inp.style.cssText='position:fixed;top:50%;left:50%;width:1px;height:1px;opacity:0;border:none;padding:0;margin:0';
-    document.body.appendChild(inp);
-    let done=false;
-    const finish=()=>{if(done)return;done=true;if(inp.value&&inp.value!==initial)onSet(inp.value);if(inp.parentNode)inp.parentNode.removeChild(inp);};
-    inp.addEventListener('change',finish);
-    inp.addEventListener('blur',()=>setTimeout(finish,200));
-    setTimeout(()=>{inp.focus();if(inp.showPicker){try{inp.showPicker();}catch(e){inp.click();}}else inp.click();},10);
-}
-function editHabitTime(id){const h=D.habits.find(x=>x.id===id);if(!h)return;_openTimePicker(h.time,v=>{h.time=v;save();render();});}
-function editTaskTime(idx){const t=vd();if(!D.dailyTasks||!D.dailyTasks[t]||!D.dailyTasks[t][idx])return;const tk=D.dailyTasks[t][idx];_openTimePicker(tk.time,v=>{tk.time=v;save();render();});}
+function _nowHHMM(){const n=new Date();return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;}
+function editHabitTime(id){const h=D.habits.find(x=>x.id===id);if(!h)return;h.time=_nowHHMM();save();render();}
+function editTaskTime(idx){const t=vd();if(!D.dailyTasks||!D.dailyTasks[t]||!D.dailyTasks[t][idx])return;D.dailyTasks[t][idx].time=_nowHHMM();save();render();}
 const GROWTH_QUOTES=[
     {q:'작은 습관이 쌓여 큰 변화가 돼',s:'— 오늘도 한 걸음'},
     {q:'어제보다 0.1% 나아졌으면 충분해',s:'— 꾸준함의 복리'},
