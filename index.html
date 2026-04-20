@@ -119,9 +119,15 @@
         @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
         .habit-check.checked::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
         .habit-item-info{min-width:0}
-        .habit-time-pill{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:2px 7px;border-radius:8px;white-space:nowrap}
-        .habit-cat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        input.habit-time-pill{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:4px 7px;border-radius:8px;border:none;outline:none;font-family:inherit;cursor:pointer;text-align:center;width:auto;min-width:64px;-webkit-appearance:none;appearance:none;box-sizing:content-box}
+        input.habit-time-pill::-webkit-calendar-picker-indicator{display:none}
+        input.habit-time-pill::-webkit-date-and-time-value{text-align:center;margin:0}
+        .habit-cat-icon{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;font-size:14px;flex-shrink:0;line-height:1;border:1.5px solid}
         .habit-task-pill{font-size:10px;font-weight:700;color:#fff;background:var(--warning);padding:2px 6px;border-radius:6px;white-space:nowrap}
+        .growth-quote{background:linear-gradient(135deg,var(--primary-light),#F0EEFF);border-radius:var(--radius);padding:18px 20px;margin:16px 0;text-align:center;position:relative;overflow:hidden;cursor:pointer}
+        .growth-quote::before{content:'✨';position:absolute;top:-10px;left:-10px;font-size:60px;opacity:.1;transform:rotate(-15deg)}
+        .growth-quote-text{font-size:13px;font-weight:600;color:var(--primary);line-height:1.5;position:relative;z-index:1}
+        .growth-quote-sub{font-size:11px;color:var(--text-sub);margin-top:4px;position:relative;z-index:1}
         .task-add-row{display:flex;gap:8px;margin:12px 0 16px;align-items:center}
         .task-add-row input.task-add-name{flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;outline:none;font-family:inherit;min-width:0}
         .task-add-row input.task-add-time{width:92px;padding:10px 8px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;outline:none;font-family:inherit}
@@ -211,7 +217,8 @@
         .evo-arrow{color:var(--border);font-size:12px}
 
         /* SETTINGS */
-        .settings-card{background:var(--card);border-radius:var(--radius);padding:16px 14px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+        .settings-card{background:var(--card);border-radius:var(--radius);padding:16px 14px;box-shadow:var(--shadow);margin-bottom:12px}
+        .settings-card input[type="date"],.settings-card input[type="time"]{width:100%;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;background:#fff}
         .settings-card h3{font-size:14px;font-weight:600;margin-bottom:12px}
         .settings-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;outline:none;margin-bottom:8px}
         .settings-input:focus{border-color:var(--primary)}
@@ -232,7 +239,7 @@
         .habit-mgr-row2{display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap}
         .habit-mgr-name{flex:1;min-width:0;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .habit-mgr-time{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:3px 7px;border-radius:8px;white-space:nowrap;flex-shrink:0}
-        .habit-mgr-cat{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+        .habit-mgr-cat{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;font-size:13px;flex-shrink:0;line-height:1;border:1.5px solid}
         .habit-mgr-days{font-size:11px;color:var(--text-sub);white-space:nowrap;flex:1}
         .habit-mgr-arrow{cursor:pointer;color:var(--text-sub);font-size:15px;padding:2px 8px;user-select:none;border-radius:6px}
         .habit-mgr-arrow:active{background:var(--border)}
@@ -242,7 +249,7 @@
         /* MODAL */
         .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:100;align-items:flex-end;justify-content:center}
         .modal-overlay.show{display:flex}
-        .modal{background:var(--card);border-radius:var(--radius) var(--radius) 0 0;padding:24px 24px calc(24px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;max-height:85vh;overflow-y:auto}
+        .modal{background:var(--card);border-radius:var(--radius) var(--radius) 0 0;padding:22px 18px calc(24px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;max-height:85vh;overflow-y:auto;box-sizing:border-box}
         .modal h3{font-size:16px;font-weight:700;margin-bottom:16px}
         .modal-field{margin-bottom:14px}
         .modal-field label{display:block;font-size:13px;font-weight:500;color:var(--text-sub);margin-bottom:6px}
@@ -250,8 +257,8 @@
         .modal-field input:focus,.modal-field select:focus{border-color:var(--primary)}
         .modal-actions{display:flex;gap:8px;margin-top:16px}
         .modal-actions .btn{flex:1}
-        .day-toggles{display:flex;gap:6px;flex-wrap:wrap}
-        .day-toggle{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;background:var(--card);color:var(--text-sub)}
+        .day-toggles{display:flex;gap:4px;flex-wrap:wrap}
+        .day-toggle{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;background:var(--card);color:var(--text-sub);flex-shrink:0}
         .day-toggle.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 
         /* GOAL EDIT */
@@ -313,6 +320,7 @@
             <input class="task-add-time" type="time" id="newTaskTime" value="12:00">
             <button onclick="addDailyTask()">+</button>
         </div>
+        <div class="growth-quote" id="growthQuote" onclick="rerollQuote()"></div>
         <div class="journal-section" style="margin-top:20px">
             <div class="journal-card"><h3>📝 오늘 할 일</h3><textarea class="journal-textarea" id="todoInput" placeholder="오늘 집중할 것들..."></textarea></div>
             <div class="journal-card"><h3>🙏 감사일기</h3><textarea class="journal-textarea" id="gratitudeInput" placeholder="오늘 감사한 것 3가지..."></textarea></div>
@@ -441,6 +449,8 @@ const DEFAULT_BIG_GOALS = [
 
 const CATEGORIES=['몸','스킬','콘텐츠','수익','마인드','성장'];
 const CAT_COLORS={'몸':'#EF4444','스킬':'#3B82F6','콘텐츠':'#EC4899','수익':'#10B981','마인드':'#8B5CF6','성장':'#F59E0B','생활':'#6B7280','집안일':'#78716C','라이프':'#06B6D4'};
+const CAT_ICONS={'몸':'💪','스킬':'🎯','콘텐츠':'📱','수익':'💰','마인드':'🧘','성장':'📚','생활':'🏠','집안일':'🧹','라이프':'✨'};
+const CAT_CELEBRATE={'몸':'💪','스킬':'🎯','콘텐츠':'✨','수익':'💰','마인드':'🌸','성장':'🌱','생활':'🏠','집안일':'🧹','라이프':'🌷'};
 
 const STAGES=[
     {minLv:1,bodyColor:'#FFE082',bodySize:32,title:'갓 태어난 씨앗',grad:['#FFF8E1','#FFF3C4','#FFE082'],msgs:['모든 건 작은 씨앗에서 시작돼요','오늘 하나만 해보자!','시작이 반이야','넌 할 수 있어']},
@@ -633,21 +643,23 @@ function renderHabits(){
             html+=`<div class="habit-item ${cls}">`;
             if(sk)html+=`<div class="habit-check" style="border-color:var(--warning);color:var(--warning);font-size:11px;display:flex;align-items:center;justify-content:center">⏭</div>`;
             else html+=`<div class="habit-check ${ck?'checked':''}" onclick="toggleHabit('${h.id}')"></div>`;
-            html+=`<div class="habit-item-info"><div class="habit-item-name"><span class="habit-time-pill">${h.time||''}</span><span class="habit-cat-dot" style="background:${cc}" title="${h.cat||''}"></span>${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
-            if(!isRest)html+=`<div class="skip-btn ${sk?'active':''}" onclick="toggleSkip('${h.id}')">${sk?'스킵됨':'스킵'}</div>`;
+            const ic=CAT_ICONS[h.cat]||'•';
+            html+=`<div class="habit-item-info"><div class="habit-item-name"><input type="time" class="habit-time-pill" value="${h.time||''}" onchange="updateHabitTime('${h.id}',this.value)" onclick="event.stopPropagation()"><span class="habit-cat-icon" style="background:${cc}25;border-color:${cc}" title="${h.cat||''}">${ic}</span>${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
             if(h.hasInput&&!sk)html+=`<div><input class="habit-input" type="number" step="0.1" value="${D.running[t]||''}" onchange="saveRunning(this.value)" placeholder="0"><span class="habit-input-unit">${h.unit}</span></div>`;
+            if(!isRest)html+=`<div class="skip-btn ${sk?'active':''}" onclick="toggleSkip('${h.id}')">${sk?'스킵됨':'스킵'}</div>`;
             html+=`</div>`;
         }else{
             const tk=it.ref,i=it.idx;
             const cls=tk.done?'completed':'';
             html+=`<div class="habit-item ${cls}">`;
             html+=`<div class="habit-check ${tk.done?'checked':''}" onclick="toggleDailyTask(${i})"></div>`;
-            html+=`<div class="habit-item-info"><div class="habit-item-name"><span class="habit-time-pill">${tk.time||''}</span><span class="habit-task-pill">오늘</span>${tk.name}</div></div>`;
+            html+=`<div class="habit-item-info"><div class="habit-item-name"><input type="time" class="habit-time-pill" value="${tk.time||''}" onchange="updateTaskTime(${i},this.value)" onclick="event.stopPropagation()"><span class="habit-task-pill">오늘</span>${tk.name}</div></div>`;
             html+=`<div class="task-delete-btn" onclick="deleteDailyTask(${i})">×</div>`;
             html+=`</div>`;
         }
     });
     document.getElementById('habitList').innerHTML=html;
+    renderGrowthQuote();
     if(!D.journals[t])D.journals[t]={};
     document.getElementById('todoInput').value=D.journals[t].todo||'';
     document.getElementById('gratitudeInput').value=D.journals[t].gratitude||'';
@@ -817,10 +829,12 @@ function renderSettings(){
     const dayNames=['일','월','화','수','목','금','토'];
     ensureHabitOrder();
     const sortedH=getSortedHabits(D.habits).map(h=>({h,origIdx:D.habits.indexOf(h)}));
-    hm.innerHTML=sortedH.map(({h,origIdx:i})=>`<div class="habit-mgr-item">
+    hm.innerHTML=sortedH.map(({h,origIdx:i})=>{
+        const cc=CAT_COLORS[h.cat]||'#999',ic=CAT_ICONS[h.cat]||'•';
+        return `<div class="habit-mgr-item">
         <div class="habit-mgr-main">
             <span class="habit-mgr-time">${h.time||''}</span>
-            <span class="habit-mgr-cat" style="background:${CAT_COLORS[h.cat]||'#999'}"></span>
+            <span class="habit-mgr-cat" style="background:${cc}25;border-color:${cc}" title="${h.cat||''}">${ic}</span>
             <div class="habit-mgr-name" onclick="openModal('editHabit',${i})">${h.name}</div>
         </div>
         <div class="habit-mgr-row2">
@@ -830,7 +844,7 @@ function renderSettings(){
             <span class="habit-mgr-edit" onclick="openModal('editHabit',${i})">편집</span>
             <span class="habit-mgr-del" onclick="deleteHabit(${i})">삭제</span>
         </div>
-    </div>`).join('');
+    </div>`;}).join('');
 
     // Timeline settings
     const ts=document.getElementById('timelineSettings');
@@ -841,10 +855,46 @@ function renderSettings(){
 function toggleHabit(id){
     const t=td();if(!D.checks[t])D.checks[t]={};
     const was=D.checks[t][id];D.checks[t][id]=!was;
-    if(!was){addXP(10);if(id==='english-grammar')D.englishProgress=Math.min(30,(D.englishProgress||0)+1);}
+    if(!was){
+        addXP(10);
+        if(id==='english-grammar')D.englishProgress=Math.min(30,(D.englishProgress||0)+1);
+        const h=D.habits.find(x=>x.id===id);
+        if(h)celebrate(CAT_CELEBRATE[h.cat]||'🎉');
+    }
     else D.xp=Math.max(0,D.xp-10);
     save();render();
 }
+function updateHabitTime(id,v){const h=D.habits.find(x=>x.id===id);if(h&&v){h.time=v;save();render();}}
+function updateTaskTime(idx,v){const t=td();if(D.dailyTasks&&D.dailyTasks[t]&&D.dailyTasks[t][idx]&&v){D.dailyTasks[t][idx].time=v;save();render();}}
+const GROWTH_QUOTES=[
+    {q:'작은 습관이 쌓여 큰 변화가 돼',s:'— 오늘도 한 걸음'},
+    {q:'어제보다 0.1% 나아졌으면 충분해',s:'— 꾸준함의 복리'},
+    {q:'완벽보다 꾸준함',s:'— 매일 조금씩'},
+    {q:'지금 심은 씨앗이 내년의 숲이 돼',s:'— 시간을 믿어'},
+    {q:'재능은 꾸준함 앞에서 무력해',s:'— 네가 증명할 거야'},
+    {q:'너는 네가 반복하는 것들의 합',s:'— 아리스토텔레스'},
+    {q:'시작한 너가 이미 대단해',s:'— 대부분은 시작도 못 해'},
+    {q:'안 해본 사람은 몰라, 해본 사람만 안다',s:'— 오늘의 너'},
+    {q:'포기하지 않는 게 재능이야',s:'— 너는 가지고 있어'},
+    {q:'작은 승리를 축하해',s:'— 오늘 체크한 모든 것'},
+    {q:'확신은 행동 뒤에 와',s:'— 먼저 움직여'},
+    {q:'실패는 데이터일 뿐',s:'— 계속 가면 성공'},
+    {q:'너의 속도를 믿어',s:'— 비교는 독'},
+    {q:'1년 뒤의 너가 지금의 너에게 감사할 거야',s:'— 미래의 선물'},
+    {q:'꿈은 행동의 동의어야',s:'— 움직이는 만큼 가까워져'},
+    {q:'오늘 하루, 네 편이 되어줘',s:'— 자기 자신에게'},
+    {q:'쉬어도 괜찮아, 멈추지만 마',s:'— 속도보다 방향'},
+    {q:'성장은 눈에 안 보여도 일어나고 있어',s:'— 뿌리부터'},
+    {q:'너는 이미 충분히 잘하고 있어',s:'— 진심이야'},
+    {q:'오늘이 제일 중요해',s:'— 지금 여기'}
+];
+function renderGrowthQuote(){
+    const el=document.getElementById('growthQuote');if(!el)return;
+    if(D._quoteIdx==null)D._quoteIdx=Math.floor(Math.random()*GROWTH_QUOTES.length);
+    const q=GROWTH_QUOTES[D._quoteIdx%GROWTH_QUOTES.length];
+    el.innerHTML=`<div class="growth-quote-text">"${q.q}"</div><div class="growth-quote-sub">${q.s}</div>`;
+}
+function rerollQuote(){D._quoteIdx=(D._quoteIdx==null?0:D._quoteIdx+1)%GROWTH_QUOTES.length;renderGrowthQuote();}
 function saveRunning(v){const t=td();D.running[t]=parseFloat(v)||0;if(D.running[t]>0){if(!D.checks[t])D.checks[t]={};D.checks[t].running=true;addXP(10);}save();render();}
 document.addEventListener('input',e=>{const t=td();if(!D.journals[t])D.journals[t]={};if(e.target.id==='todoInput'){D.journals[t].todo=e.target.value;save();}if(e.target.id==='gratitudeInput'){D.journals[t].gratitude=e.target.value;save();}});
 
