@@ -202,14 +202,13 @@
         .settings-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
         .settings-input{padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit;width:100%;min-width:0;max-width:100%}
         .settings-input:focus{border-color:var(--primary)}
-        .habit-mgr-item{display:block;padding:10px 4px;border-bottom:1px solid var(--border)}
-        .habit-mgr-main{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-        .habit-mgr-row2{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;flex-wrap:wrap}
-        .habit-mgr-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto}
-        .habit-mgr-name{font-size:13px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .habit-mgr-item{display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid var(--border)}
+        .habit-mgr-info{flex:1;min-width:0}
+        .habit-mgr-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
+        .habit-mgr-name{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .habit-mgr-time{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:3px 7px;border-radius:8px;white-space:nowrap;flex-shrink:0;min-width:46px;text-align:center}
         .habit-mgr-cat{font-size:17px;flex-shrink:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px}
-        .habit-mgr-days{font-size:11px;color:var(--text-sub);white-space:nowrap}
+        .habit-mgr-days{font-size:11px;color:var(--text-sub);white-space:nowrap;margin-top:2px}
         .habit-mgr-arrow{cursor:pointer;color:var(--text-sub);font-size:14px;padding:3px 6px;user-select:none;border-radius:6px;line-height:1}
         .habit-mgr-arrow:active{background:var(--border)}
         .habit-mgr-edit{color:var(--primary);font-size:12px;cursor:pointer;white-space:nowrap;padding:3px 4px}
@@ -1039,19 +1038,17 @@ function renderSettings(){
     hm.innerHTML=sortedH.map(({h,origIdx:i})=>{
         const ic=CAT_ICONS[h.cat]||'•';
         return `<div class="habit-mgr-item">
-        <div class="habit-mgr-main">
-            <span class="habit-mgr-time">${h.time||''}</span>
-            <span class="habit-mgr-cat" title="${h.cat||''}">${ic}</span>
+        <span class="habit-mgr-time">${h.time||''}</span>
+        <span class="habit-mgr-cat" title="${h.cat||''}">${ic}</span>
+        <div class="habit-mgr-info">
             <div class="habit-mgr-name" onclick="openModal('editHabit',${i})">${h.name}</div>
-        </div>
-        <div class="habit-mgr-row2">
             <div class="habit-mgr-days">${h.days.map(d=>dayNames[d]).join('')}</div>
-            <div class="habit-mgr-actions">
-                <span class="habit-mgr-arrow" onclick="moveHabit('${h.id}',-1)">↑</span>
-                <span class="habit-mgr-arrow" onclick="moveHabit('${h.id}',1)">↓</span>
-                <span class="habit-mgr-edit" onclick="openModal('editHabit',${i})">편집</span>
-                <span class="habit-mgr-del" onclick="deleteHabit(${i})">삭제</span>
-            </div>
+        </div>
+        <div class="habit-mgr-actions">
+            <span class="habit-mgr-arrow" onclick="moveHabit('${h.id}',-1)">↑</span>
+            <span class="habit-mgr-arrow" onclick="moveHabit('${h.id}',1)">↓</span>
+            <span class="habit-mgr-edit" onclick="openModal('editHabit',${i})">편집</span>
+            <span class="habit-mgr-del" onclick="deleteHabit(${i})">삭제</span>
         </div>
     </div>`;}).join('');
     const ts=document.getElementById('timelineSettings');
