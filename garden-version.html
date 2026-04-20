@@ -221,6 +221,7 @@
         @keyframes firefly{0%,100%{opacity:.2}50%{opacity:.8}}
         .firefly{position:absolute;border-radius:50%;background:rgba(255,255,150,.6);animation:firefly 2s ease-in-out infinite;pointer-events:none}
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -443,7 +444,39 @@ function loadData(){
         challengeDays:180,restDays:{},skips:{}
     };
 }
-function save(){localStorage.setItem('habitGarden',JSON.stringify(D));}
+function save(){localStorage.setItem('habitGarden',JSON.stringify(D));syncToCloud();}
+
+// ===== SUPABASE SYNC =====
+const SUPABASE_URL='https://zziszaabzgzwkfqjrwxy.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6aXN6YWFiemd6d2tmcWpyd3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODA0ODMsImV4cCI6MjA5MjI1NjQ4M30.i98OtOTmOSvSViR33ny86x3Z9r-wCfhmnKdLPX_Uqg8';
+const sb=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+const SYNC_ID='garden-v1';
+let _syncTimer=null;
+function syncToCloud(){
+    if(!sb)return;
+    clearTimeout(_syncTimer);
+    _syncTimer=setTimeout(async()=>{
+        try{
+            await sb.from('habit_data').upsert({id:SYNC_ID,data:D,updated_at:new Date().toISOString()});
+        }catch(e){console.warn('sync up failed',e);}
+    },2000);
+}
+async function syncFromCloud(){
+    if(!sb)return;
+    try{
+        const{data,error}=await sb.from('habit_data').select('data,updated_at').eq('id',SYNC_ID).single();
+        if(error||!data)return;
+        const local=localStorage.getItem('habitGarden');
+        const localTime=local?JSON.parse(local)._syncTime||0:0;
+        const cloudTime=new Date(data.updated_at).getTime();
+        if(cloudTime>localTime){
+            D=data.data;D._syncTime=cloudTime;
+            localStorage.setItem('habitGarden',JSON.stringify(D));
+            render();
+        }
+    }catch(e){console.warn('sync down failed',e);}
+}
+function markSyncTime(){D._syncTime=Date.now();}
 function td(){return new Date().toISOString().split('T')[0];}
 function dow(){return new Date().getDay();}
 function dayCount(){return Math.max(1,Math.floor((new Date(td())-new Date(D.startDate))/864e5)+1);}
@@ -863,6 +896,9 @@ function celebrate(e){const el=document.getElementById('celebration');document.g
 function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');render();}
 
 render();
+syncFromCloud();
+setInterval(syncFromCloud,30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncFromCloud();});
 </script>
 </body>
 </html>
