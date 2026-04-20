@@ -16,7 +16,7 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--bg:#F7F5EF;--card:#FFFDF7;--primary:#5B8C5A;--primary-light:#E8F0E3;--success:#7CB342;--success-light:#F1F8E9;--warning:#FFB74D;--danger:#E57373;--text:#2E3A2E;--text-sub:#7A8A7A;--text-light:#A8B8A8;--border:#E5E0D5;--shadow:0 4px 20px rgba(91,140,90,.06);--shadow-lg:0 8px 32px rgba(91,140,90,.1);--radius:20px;--radius-sm:14px}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:calc(90px + env(safe-area-inset-bottom,0px));overflow-x:hidden;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(90px + env(safe-area-inset-bottom,0px));overflow-x:hidden;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
         .container{max-width:480px;margin:0 auto;padding:20px 16px}
         h2.page-title{font-size:20px;font-weight:700;margin-bottom:16px}
 
@@ -94,9 +94,17 @@
         .habit-check.checked{background:var(--success);border-color:var(--success);animation:pop .3s ease}
         @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
         .habit-check.checked::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
-        .habit-item-info{flex:1}
-        .habit-item-name{font-size:14px;font-weight:500}
+        .habit-item-info{flex:1;min-width:0}
+        .habit-item-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+        .habit-time-pill{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:2px 7px;border-radius:8px;white-space:nowrap}
+        .habit-cat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        .habit-task-pill{font-size:10px;font-weight:700;color:#fff;background:var(--warning);padding:2px 6px;border-radius:6px;white-space:nowrap}
         .habit-item-detail{font-size:11px;color:var(--text-sub);margin-top:2px}
+        .task-add-row{display:flex;gap:8px;margin:12px 0 16px;align-items:center}
+        .task-add-row input.task-add-name{flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;outline:none;font-family:inherit;min-width:0}
+        .task-add-row input.task-add-time{width:92px;padding:10px 8px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;outline:none;font-family:inherit}
+        .task-add-row button{padding:10px 14px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-weight:600;font-size:13px;cursor:pointer}
+        .task-delete-btn{font-size:16px;color:var(--text-light);cursor:pointer;padding:0 4px;line-height:1}
         .habit-item-link{font-size:11px;color:var(--primary);text-decoration:none;margin-top:2px;display:inline-block}
         .habit-input{width:52px;padding:4px 6px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;text-align:center;outline:none}
         .habit-input:focus{border-color:var(--primary)}
@@ -181,11 +189,17 @@
         .settings-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
         .settings-input{padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit;width:100%;min-width:0;max-width:100%}
         .settings-input:focus{border-color:var(--primary)}
-        .habit-mgr-item{display:flex;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
-        .habit-mgr-name{font-size:13px;font-weight:500;flex:1;min-width:100px}
-        .habit-mgr-time{font-size:11px;color:var(--primary);font-weight:600;background:var(--primary-light);padding:2px 6px;border-radius:8px;white-space:nowrap}
-        .habit-mgr-days{font-size:11px;color:var(--text-sub);white-space:nowrap}
-        .habit-mgr-del{font-size:12px;color:var(--danger);cursor:pointer;white-space:nowrap}
+        .habit-mgr-item{display:block;padding:10px 4px;border-bottom:1px solid var(--border)}
+        .habit-mgr-main{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+        .habit-mgr-row2{display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap}
+        .habit-mgr-name{font-size:13px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .habit-mgr-time{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:3px 7px;border-radius:8px;white-space:nowrap;flex-shrink:0}
+        .habit-mgr-cat{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+        .habit-mgr-days{font-size:11px;color:var(--text-sub);white-space:nowrap;flex:1}
+        .habit-mgr-arrow{cursor:pointer;color:var(--text-sub);font-size:15px;padding:2px 8px;user-select:none;border-radius:6px}
+        .habit-mgr-arrow:active{background:var(--border)}
+        .habit-mgr-edit{color:var(--primary);font-size:12px;cursor:pointer;white-space:nowrap}
+        .habit-mgr-del{font-size:11px;color:var(--danger);cursor:pointer;white-space:nowrap}
         .link-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px}
         .link-item a{color:var(--primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .link-remove{color:var(--danger);font-size:11px;cursor:pointer}
@@ -273,6 +287,11 @@
         <div class="rest-day-bar"><div class="label">😴 오늘 쉬는 날</div><div class="rest-toggle" id="restToggle" onclick="toggleRestDay()"></div></div>
         <div id="restReasonWrap" style="display:none"><div class="rest-reason"><input id="restReasonInput" placeholder="사유 (선택)" oninput="saveRestReason()"></div></div>
         <div id="habitList"></div>
+        <div class="task-add-row">
+            <input class="task-add-name" id="newTaskName" placeholder="오늘만 할 일 추가..." onkeydown="if(event.key==='Enter')addDailyTask()">
+            <input class="task-add-time" type="time" id="newTaskTime" value="12:00">
+            <button onclick="addDailyTask()">+</button>
+        </div>
         <div style="margin-top:20px">
             <div class="journal-card"><h3>📝 오늘 할 일</h3><textarea class="journal-textarea" id="todoInput" placeholder="오늘 집중할 것들..."></textarea></div>
             <div class="journal-card"><h3>🙏 감사일기</h3><textarea class="journal-textarea" id="gratitudeInput" placeholder="오늘 감사한 것 3가지..."></textarea></div>
@@ -439,9 +458,19 @@ const DAILY_QUOTES=[
 let D=loadData();
 let insightPeriod='week';
 
+function migrateData(d){
+    if(!d)return d;
+    if(d.challengeDays==null)d.challengeDays=180;
+    if(!d.restDays)d.restDays={};
+    if(!d.skips)d.skips={};
+    if(d.gardenName==null)d.gardenName='';
+    if(!d.dailyTasks)d.dailyTasks={};
+    if(d.habits)d.habits.forEach(h=>{if(!h.time)h.time=HABIT_TIME_FALLBACK[h.id]||'12:00';});
+    return d;
+}
 function loadData(){
     const s=localStorage.getItem('habitGarden');
-    if(s){const d=JSON.parse(s);if(!d.challengeDays)d.challengeDays=180;if(!d.restDays)d.restDays={};if(!d.skips)d.skips={};if(!d.gardenName)d.gardenName='';if(d.habits)d.habits.forEach(h=>{if(!h.time)h.time=HABIT_TIME_FALLBACK[h.id]||'12:00';});return d;}
+    if(s){return migrateData(JSON.parse(s));}
     return {
         startDate:new Date().toISOString().split('T')[0],
         habits:DEFAULT_HABITS.map(h=>({...h})),
@@ -480,7 +509,7 @@ async function syncFromCloud(){
         const localTime=local?JSON.parse(local)._syncTime||0:0;
         const cloudTime=new Date(data.updated_at).getTime();
         if(cloudTime>localTime){
-            D=data.data;D._syncTime=cloudTime;
+            D=migrateData(data.data);D._syncTime=cloudTime;
             localStorage.setItem('habitGarden',JSON.stringify(D));
             render();
         }
@@ -720,24 +749,35 @@ function renderHabits(){
     document.getElementById('restReasonWrap').style.display=isRest?'block':'none';
     if(isRest)document.getElementById('restReasonInput').value=typeof D.restDays[t]==='string'?D.restDays[t]:'';
 
-    const sorted=[...habits].sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
-    const blocks={};sorted.forEach(x=>{const hr=(x.time||'99:99').split(':')[0];let blk;const h=parseInt(hr);if(h<12)blk='🌅 오전';else if(h<17)blk='☀️ 오후';else blk='🌙 저녁';if(!blocks[blk])blocks[blk]=[];blocks[blk].push(x);});
+    if(!D.dailyTasks)D.dailyTasks={};
+    if(!D.dailyTasks[t])D.dailyTasks[t]=[];
+    const tasks=D.dailyTasks[t];
+    const merged=[...habits.map(h=>({kind:'habit',ref:h,time:h.time||'99:99'})),...tasks.map((tk,i)=>({kind:'task',ref:tk,idx:i,time:tk.time||'99:99'}))];
+    const sorted=sortItems(merged);
     let html='';
-    Object.entries(blocks).forEach(([blk,items])=>{
-        html+=`<div class="habit-category"><div class="habit-category-title" style="color:var(--primary)">${blk}</div>`;
-        items.forEach(h=>{
+    sorted.forEach(it=>{
+        if(it.kind==='habit'){
+            const h=it.ref;
             const ck=D.checks[t][h.id]||false;
             const sk=D.skips[t][h.id]||isRest;
             const cls=sk?'skipped':ck?'completed':'';
+            const cc=CAT_COLORS[h.cat]||'#999';
             html+=`<div class="habit-item ${cls}">`;
             if(sk)html+=`<div class="habit-check" style="border-color:var(--warning);color:var(--warning);font-size:11px;display:flex;align-items:center;justify-content:center">⏭</div>`;
             else html+=`<div class="habit-check ${ck?'checked':''}" onclick="toggleHabit('${h.id}')"></div>`;
-            html+=`<div class="habit-item-info"><div class="habit-item-name"><span style="color:var(--primary);font-weight:600;font-size:12px;margin-right:6px">${h.time||''}</span>${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
+            html+=`<div class="habit-item-info"><div class="habit-item-name"><span class="habit-time-pill">${h.time||''}</span><span class="habit-cat-dot" style="background:${cc}" title="${h.cat||''}"></span>${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
             if(!isRest)html+=`<div class="skip-btn ${sk?'active':''}" onclick="toggleSkip('${h.id}')">${sk?'스킵됨':'스킵'}</div>`;
             if(h.hasInput&&!sk)html+=`<div><input class="habit-input" type="number" step="0.1" value="${D.running[t]||''}" onchange="saveRunning(this.value)" placeholder="0"><span class="habit-input-unit">${h.unit}</span></div>`;
             html+=`</div>`;
-        });
-        html+='</div>';
+        }else{
+            const tk=it.ref,i=it.idx;
+            const cls=tk.done?'completed':'';
+            html+=`<div class="habit-item ${cls}">`;
+            html+=`<div class="habit-check ${tk.done?'checked':''}" onclick="toggleDailyTask(${i})"></div>`;
+            html+=`<div class="habit-item-info"><div class="habit-item-name"><span class="habit-time-pill">${tk.time||''}</span><span class="habit-task-pill">오늘</span>${tk.name}</div></div>`;
+            html+=`<div class="task-delete-btn" onclick="deleteDailyTask(${i})">×</div>`;
+            html+=`</div>`;
+        }
     });
     document.getElementById('habitList').innerHTML=html;
     if(!D.journals[t])D.journals[t]={};
@@ -821,6 +861,62 @@ function renderStreaks(){
     st.innerHTML=allH.slice(0,12).map(h=>`<div class="insight-row"><span class="insight-label">${h.name}</span><span class="insight-value">${calcHabitStreak(h.id)}일</span></div>`).join('');
 }
 
+function sortItems(items){
+    const ord=D.habitOrder||[];
+    const idx={};ord.forEach((id,i)=>idx[id]=i);
+    return [...items].sort((a,b)=>{
+        if(a.kind==='task'&&b.kind==='habit')return 1;
+        if(a.kind==='habit'&&b.kind==='task')return -1;
+        if(a.kind==='habit'&&b.kind==='habit'){
+            const ai=idx[a.ref.id]??9999,bi=idx[b.ref.id]??9999;
+            if(ai!==bi)return ai-bi;
+        }
+        return (a.time||'99:99').localeCompare(b.time||'99:99');
+    });
+}
+function getSortedHabits(habits){
+    return sortItems(habits.map(h=>({kind:'habit',ref:h,time:h.time||'99:99'}))).map(it=>it.ref);
+}
+function ensureHabitOrder(){
+    if(!D.habitOrder)D.habitOrder=[];
+    const have=new Set(D.habitOrder);
+    const timeSorted=[...D.habits].sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    timeSorted.forEach(h=>{if(!have.has(h.id))D.habitOrder.push(h.id);});
+    D.habitOrder=D.habitOrder.filter(id=>D.habits.some(h=>h.id===id));
+}
+function moveHabit(id,dir){
+    ensureHabitOrder();
+    const i=D.habitOrder.indexOf(id);
+    if(dir<0&&i>0){[D.habitOrder[i-1],D.habitOrder[i]]=[D.habitOrder[i],D.habitOrder[i-1]];}
+    else if(dir>0&&i>=0&&i<D.habitOrder.length-1){[D.habitOrder[i],D.habitOrder[i+1]]=[D.habitOrder[i+1],D.habitOrder[i]];}
+    save();render();
+}
+function addDailyTask(){
+    const name=document.getElementById('newTaskName').value.trim();
+    if(!name)return;
+    const time=document.getElementById('newTaskTime').value||'12:00';
+    const t=td();
+    if(!D.dailyTasks)D.dailyTasks={};
+    if(!D.dailyTasks[t])D.dailyTasks[t]=[];
+    D.dailyTasks[t].push({name,time,done:false});
+    document.getElementById('newTaskName').value='';
+    save();render();
+}
+function toggleDailyTask(i){
+    const t=td();
+    if(!D.dailyTasks||!D.dailyTasks[t]||!D.dailyTasks[t][i])return;
+    const was=D.dailyTasks[t][i].done;
+    D.dailyTasks[t][i].done=!was;
+    if(!was)addXP(10);else D.xp=Math.max(0,D.xp-10);
+    save();render();
+}
+function deleteDailyTask(i){
+    const t=td();
+    if(!D.dailyTasks||!D.dailyTasks[t])return;
+    D.dailyTasks[t].splice(i,1);
+    save();render();
+}
+
 function renderSettings(){
     document.getElementById('challengeDaysInput').value=D.challengeDays;
     document.getElementById('startDateInput').value=D.startDate;
@@ -830,8 +926,22 @@ function renderSettings(){
         document.getElementById(type+'LinksC').innerHTML=(D.links[type]||[]).map((u,i)=>`<div class="link-item"><a href="${u}" target="_blank">${u}</a><span class="link-remove" onclick="removeLink('${type}',${i})">삭제</span></div>`).join('');
     });
     const hm=document.getElementById('habitManager'),dayNames=['일','월','화','수','목','금','토'];
-    const sortedH=[...D.habits].map((h,origIdx)=>({h,origIdx})).sort((a,b)=>(a.h.time||'99:99').localeCompare(b.h.time||'99:99'));
-    hm.innerHTML=sortedH.map(({h,origIdx:i})=>`<div class="habit-mgr-item"><span class="habit-mgr-time">${h.time||''}</span><div class="habit-mgr-name" onclick="openModal('editHabit',${i})" style="cursor:pointer">${h.name}</div><div class="habit-mgr-days">${h.days.map(d=>dayNames[d]).join(',')}</div><span style="color:var(--primary);font-size:12px;cursor:pointer" onclick="openModal('editHabit',${i})">편집</span><span class="habit-mgr-del" onclick="deleteHabit(${i})">삭제</span></div>`).join('');
+    ensureHabitOrder();
+    const sortedH=getSortedHabits(D.habits).map(h=>({h,origIdx:D.habits.indexOf(h)}));
+    hm.innerHTML=sortedH.map(({h,origIdx:i})=>`<div class="habit-mgr-item">
+        <div class="habit-mgr-main">
+            <span class="habit-mgr-time">${h.time||''}</span>
+            <span class="habit-mgr-cat" style="background:${CAT_COLORS[h.cat]||'#999'}"></span>
+            <div class="habit-mgr-name" onclick="openModal('editHabit',${i})">${h.name}</div>
+        </div>
+        <div class="habit-mgr-row2">
+            <div class="habit-mgr-days">${h.days.map(d=>dayNames[d]).join('')}</div>
+            <span class="habit-mgr-arrow" onclick="moveHabit('${h.id}',-1)">↑</span>
+            <span class="habit-mgr-arrow" onclick="moveHabit('${h.id}',1)">↓</span>
+            <span class="habit-mgr-edit" onclick="openModal('editHabit',${i})">편집</span>
+            <span class="habit-mgr-del" onclick="deleteHabit(${i})">삭제</span>
+        </div>
+    </div>`).join('');
     const ts=document.getElementById('timelineSettings');
     ts.innerHTML=D.timeline.map((t,i)=>`<div class="settings-row"><input class="settings-input" type="time" value="${t.time}" onchange="updateTimeline(${i},'time',this.value)" style="width:100px"><input class="settings-input" value="${t.label}" onchange="updateTimeline(${i},'label',this.value)" style="flex:1"><span class="habit-mgr-del" onclick="deleteTimelineItem(${i})" style="cursor:pointer">삭제</span></div>`).join('');
 }
