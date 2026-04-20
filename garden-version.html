@@ -79,7 +79,14 @@
         .phase-progress-fill{height:100%;background:var(--primary);border-radius:99px}
 
         /* HABITS */
-        .habit-day-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .habit-day-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+        .date-nav{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;background:var(--card);border-radius:var(--radius-sm);padding:8px 12px;box-shadow:var(--shadow)}
+        .date-nav-btn{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-sub);flex-shrink:0}
+        .date-nav-btn:disabled{opacity:.3;cursor:not-allowed}
+        .date-nav-label{font-size:13px;font-weight:600;flex:1;text-align:center}
+        .date-nav-today{font-size:11px;color:var(--primary);font-weight:600;cursor:pointer;padding:4px 10px;border-radius:99px;background:var(--primary-light)}
+        .date-nav-today.hidden{display:none}
+        .past-indicator{font-size:11px;color:var(--warning);font-weight:600;margin-left:4px}
         .habit-day-title{font-size:18px;font-weight:700}
         .habit-day-count{font-size:13px;color:var(--text-sub)}
         .habit-category{margin-bottom:16px}
@@ -195,16 +202,17 @@
         .settings-input{padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit;width:100%;min-width:0;max-width:100%}
         .settings-input:focus{border-color:var(--primary)}
         .habit-mgr-item{display:block;padding:10px 4px;border-bottom:1px solid var(--border)}
-        .habit-mgr-main{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-        .habit-mgr-row2{display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap}
+        .habit-mgr-main{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+        .habit-mgr-row2{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;flex-wrap:wrap}
+        .habit-mgr-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto}
         .habit-mgr-name{font-size:13px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .habit-mgr-time{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:3px 7px;border-radius:8px;white-space:nowrap;flex-shrink:0}
-        .habit-mgr-cat{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;font-size:13px;flex-shrink:0;line-height:1;border:1.5px solid}
-        .habit-mgr-days{font-size:11px;color:var(--text-sub);white-space:nowrap;flex:1}
-        .habit-mgr-arrow{cursor:pointer;color:var(--text-sub);font-size:15px;padding:2px 8px;user-select:none;border-radius:6px}
+        .habit-mgr-time{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:3px 7px;border-radius:8px;white-space:nowrap;flex-shrink:0;min-width:46px;text-align:center}
+        .habit-mgr-cat{font-size:17px;flex-shrink:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px}
+        .habit-mgr-days{font-size:11px;color:var(--text-sub);white-space:nowrap}
+        .habit-mgr-arrow{cursor:pointer;color:var(--text-sub);font-size:14px;padding:3px 6px;user-select:none;border-radius:6px;line-height:1}
         .habit-mgr-arrow:active{background:var(--border)}
-        .habit-mgr-edit{color:var(--primary);font-size:12px;cursor:pointer;white-space:nowrap}
-        .habit-mgr-del{font-size:11px;color:var(--danger);cursor:pointer;white-space:nowrap}
+        .habit-mgr-edit{color:var(--primary);font-size:12px;cursor:pointer;white-space:nowrap;padding:3px 4px}
+        .habit-mgr-del{font-size:11px;color:var(--danger);cursor:pointer;white-space:nowrap;padding:3px 4px}
         .link-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px}
         .link-item a{color:var(--primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .link-remove{color:var(--danger);font-size:11px;cursor:pointer}
@@ -300,6 +308,12 @@
     <!-- HABITS -->
     <div id="page-habits" class="page">
         <div class="habit-day-header"><div class="habit-day-title" id="habitDayTitle">월요일</div><div class="habit-day-count" id="habitDayCount">0/0</div></div>
+        <div class="date-nav">
+            <button class="date-nav-btn" onclick="changeViewDate(-1)">‹</button>
+            <div class="date-nav-label" id="dateNavLabel"></div>
+            <span class="date-nav-today hidden" id="dateNavToday" onclick="goToday()">오늘</span>
+            <button class="date-nav-btn" id="dateNavNext" onclick="changeViewDate(1)">›</button>
+        </div>
         <div class="rest-day-bar"><div class="label">😴 오늘 쉬는 날</div><div class="rest-toggle" id="restToggle" onclick="toggleRestDay()"></div></div>
         <div id="restReasonWrap" style="display:none"><div class="rest-reason"><input id="restReasonInput" placeholder="사유 (선택)" oninput="saveRestReason()"></div></div>
         <div id="habitList"></div>
@@ -344,7 +358,8 @@
         <div class="settings-card"><h3>챌린지 기간</h3><div class="settings-row"><input type="number" class="settings-input" id="challengeDaysInput" min="7" max="365" style="width:80px" onchange="saveChallengeDays()"><span style="font-size:14px;color:var(--text-sub);margin-left:8px">일</span></div></div>
         <div class="settings-card"><h3>챌린지 시작일</h3><input type="date" class="settings-input" id="startDateInput" onchange="saveStartDate()"></div>
         <div class="settings-card"><h3>정원 이름</h3><input type="text" class="settings-input" id="gardenNameInput" placeholder="나의 작은 정원" onchange="saveGardenName()"></div>
-        <div class="settings-card"><h3>현재 읽는 책</h3><input type="text" class="settings-input" id="bookInput" placeholder="책 제목" onchange="saveBook()"></div>
+        <div class="settings-card"><h3>📚 읽는 책</h3><div id="booksList"></div><div class="settings-row"><input class="settings-input" id="newBookInput" placeholder="책 제목 추가"><button class="btn btn-sm" onclick="addBook()">추가</button></div></div>
+        <div class="settings-card"><h3>레벨/XP 초기화</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">현재: Lv.<span id="curLv"></span> · XP <span id="curXp"></span></div><button class="btn-outline btn-sm" style="width:100%" onclick="resetLevel()">레벨 1로 초기화</button></div>
         <div class="settings-card"><h3>홈트 영상 링크</h3><div id="workoutLinksC"></div><div class="settings-row"><input class="settings-input" id="newWorkoutLink" placeholder="유튜브 링크"><button class="btn btn-sm" onclick="addLink('workout')">추가</button></div></div>
         <div class="settings-card"><h3>영어 학습 링크</h3><div id="englishLinksC"></div><div class="settings-row"><input class="settings-input" id="newEnglishLink" placeholder="유튜브 링크"><button class="btn btn-sm" onclick="addLink('english')">추가</button></div></div>
         <div class="settings-card"><h3>타임라인 시간 설정</h3><div id="timelineSettings"></div><button class="btn-outline btn-sm" style="width:100%;margin-top:10px" onclick="addTimelineItem()">+ 시간대 추가</button></div>
@@ -482,6 +497,16 @@ const DAILY_QUOTES=[
 
 let D=loadData();
 let insightPeriod='week';
+let viewDate=new Date().toISOString().split('T')[0];
+function vd(){return viewDate;}
+function isPast(){return viewDate<new Date().toISOString().split('T')[0];}
+function changeViewDate(delta){
+    const d=new Date(viewDate);d.setDate(d.getDate()+delta);
+    const ds=d.toISOString().split('T')[0];
+    if(ds>new Date().toISOString().split('T')[0])return;
+    viewDate=ds;render();
+}
+function goToday(){viewDate=new Date().toISOString().split('T')[0];render();}
 
 function migrateData(d){
     if(!d)return d;
@@ -490,6 +515,7 @@ function migrateData(d){
     if(!d.skips)d.skips={};
     if(d.gardenName==null)d.gardenName='';
     if(!d.dailyTasks)d.dailyTasks={};
+    if(!d.books){d.books=d.book?[d.book]:[];}
     if(d.habits){
         const wbIdx=d.habits.findIndex(h=>h.id==='work-block');
         if(wbIdx>=0){
@@ -560,7 +586,16 @@ function dow(){return new Date().getDay();}
 function dayCount(){return Math.max(1,Math.floor((new Date(td())-new Date(D.startDate))/864e5)+1);}
 function weekCount(){return Math.ceil(dayCount()/7);}
 function xpFor(lv){return 50+(lv-1)*30;}
-function addXP(n){D.xp+=n;while(D.xp>=xpFor(D.level)){D.xp-=xpFor(D.level);D.level++;celebrate('🌸');}save();}
+function addXP(n){
+    D.xp+=n;
+    while(D.xp>=xpFor(D.level)){D.xp-=xpFor(D.level);D.level++;celebrate('🎉','레벨업! Lv.'+D.level);}
+    while(D.xp<0&&D.level>1){D.level--;D.xp+=xpFor(D.level);}
+    if(D.xp<0)D.xp=0;
+    save();
+}
+function resetLevel(){if(confirm('레벨과 XP를 모두 초기화할까요? (체크한 기록은 유지됩니다)')){D.level=1;D.xp=0;save();render();}}
+function addBook(){const v=document.getElementById('newBookInput').value.trim();if(!v)return;if(!D.books)D.books=[];D.books.push(v);document.getElementById('newBookInput').value='';save();renderSettings();}
+function removeBook(i){if(!D.books)return;D.books.splice(i,1);save();renderSettings();}
 function getStage(){let s=STAGES[0];for(const st of STAGES)if(D.level>=st.minLv)s=st;return s;}
 function getStageIdx(){let i=0;for(let j=0;j<STAGES.length;j++)if(D.level>=STAGES[j].minLv)i=j;return i;}
 function getPhase(){const w=weekCount();for(const p of PHASES)if(p.weeks.includes(w))return p;return PHASES[PHASES.length-1];}
@@ -775,14 +810,24 @@ function renderHome(){
 }
 
 function renderHabits(){
-    const d=dow(),days=['일','월','화','수','목','금','토'],habits=getHabitsForDay(d),t=td();
+    const days=['일','월','화','수','목','금','토'];
+    const t=vd(),dateObj=new Date(t),d=dateObj.getDay(),habits=getHabitsForDay(d);
     if(!D.checks[t])D.checks[t]={};
     if(!D.skips[t])D.skips[t]={};
     const isRest=!!D.restDays[t];
     const active=habits.filter(x=>!D.skips[t][x.id]&&!isRest);
     const done=active.filter(x=>D.checks[t][x.id]).length;
-    document.getElementById('habitDayTitle').textContent=days[d]+'요일';
+    const past=isPast();
+    document.getElementById('habitDayTitle').innerHTML=days[d]+'요일'+(past?' <span class="past-indicator">과거 보기</span>':'');
     document.getElementById('habitDayCount').textContent=isRest?'쉬는 날':`${done}/${active.length}`;
+    const lab=document.getElementById('dateNavLabel');
+    if(lab){
+        const mo=dateObj.getMonth()+1,da=dateObj.getDate();
+        const today=new Date().toISOString().split('T')[0];
+        lab.textContent=t===today?`${mo}월 ${da}일 (오늘)`:`${dateObj.getFullYear()}. ${mo}. ${da}.`;
+        document.getElementById('dateNavNext').disabled=(t===today);
+        document.getElementById('dateNavToday').classList.toggle('hidden',t===today);
+    }
     const rt=document.getElementById('restToggle');
     rt.className='rest-toggle'+(isRest?' on':'');
     document.getElementById('restReasonWrap').style.display=isRest?'block':'none';
@@ -942,7 +987,7 @@ function addDailyTask(){
     const name=document.getElementById('newTaskName').value.trim();
     if(!name)return;
     const time=document.getElementById('newTaskTime').value||'12:00';
-    const t=td();
+    const t=vd();
     if(!D.dailyTasks)D.dailyTasks={};
     if(!D.dailyTasks[t])D.dailyTasks[t]=[];
     D.dailyTasks[t].push({name,time,done:false});
@@ -950,16 +995,17 @@ function addDailyTask(){
     save();render();
 }
 function toggleDailyTask(i){
-    const t=td();
+    const t=vd();
     if(!D.dailyTasks||!D.dailyTasks[t]||!D.dailyTasks[t][i])return;
     const was=D.dailyTasks[t][i].done;
     D.dailyTasks[t][i].done=!was;
-    if(!was){addXP(10);celebrate('🎯',TASK_MESSAGES[Math.floor(Math.random()*TASK_MESSAGES.length)]);}
-    else D.xp=Math.max(0,D.xp-10);
+    const isToday=t===td();
+    if(!was){if(isToday)addXP(10);celebrate('🎯',TASK_MESSAGES[Math.floor(Math.random()*TASK_MESSAGES.length)]);}
+    else if(isToday)addXP(-10);
     save();render();
 }
 function deleteDailyTask(i){
-    const t=td();
+    const t=vd();
     if(!D.dailyTasks||!D.dailyTasks[t])return;
     D.dailyTasks[t].splice(i,1);
     save();render();
@@ -969,7 +1015,9 @@ function renderSettings(){
     document.getElementById('challengeDaysInput').value=D.challengeDays;
     document.getElementById('startDateInput').value=D.startDate;
     document.getElementById('gardenNameInput').value=D.gardenName||'';
-    document.getElementById('bookInput').value=D.book||'';
+    if(!D.books)D.books=D.book?[D.book]:[];
+    document.getElementById('booksList').innerHTML=D.books.length?D.books.map((b,i)=>`<div class="link-item"><span>${b}</span><span class="link-remove" onclick="removeBook(${i})">삭제</span></div>`).join(''):'<div style="font-size:12px;color:var(--text-light);margin-bottom:8px">아직 추가된 책이 없어요</div>';
+    const cl=document.getElementById('curLv'),cx=document.getElementById('curXp');if(cl)cl.textContent=D.level;if(cx)cx.textContent=D.xp+' / '+xpFor(D.level);
     ['workout','english'].forEach(type=>{
         document.getElementById(type+'LinksC').innerHTML=(D.links[type]||[]).map((u,i)=>`<div class="link-item"><a href="${u}" target="_blank">${u}</a><span class="link-remove" onclick="removeLink('${type}',${i})">삭제</span></div>`).join('');
     });
@@ -977,19 +1025,21 @@ function renderSettings(){
     ensureHabitOrder();
     const sortedH=getSortedHabits(D.habits).map(h=>({h,origIdx:D.habits.indexOf(h)}));
     hm.innerHTML=sortedH.map(({h,origIdx:i})=>{
-        const cc=CAT_COLORS[h.cat]||'#999',ic=CAT_ICONS[h.cat]||'•';
+        const ic=CAT_ICONS[h.cat]||'•';
         return `<div class="habit-mgr-item">
         <div class="habit-mgr-main">
             <span class="habit-mgr-time">${h.time||''}</span>
-            <span class="habit-mgr-cat" style="background:${cc}25;border-color:${cc}" title="${h.cat||''}">${ic}</span>
+            <span class="habit-mgr-cat" title="${h.cat||''}">${ic}</span>
             <div class="habit-mgr-name" onclick="openModal('editHabit',${i})">${h.name}</div>
         </div>
         <div class="habit-mgr-row2">
             <div class="habit-mgr-days">${h.days.map(d=>dayNames[d]).join('')}</div>
-            <span class="habit-mgr-arrow" onclick="moveHabit('${h.id}',-1)">↑</span>
-            <span class="habit-mgr-arrow" onclick="moveHabit('${h.id}',1)">↓</span>
-            <span class="habit-mgr-edit" onclick="openModal('editHabit',${i})">편집</span>
-            <span class="habit-mgr-del" onclick="deleteHabit(${i})">삭제</span>
+            <div class="habit-mgr-actions">
+                <span class="habit-mgr-arrow" onclick="moveHabit('${h.id}',-1)">↑</span>
+                <span class="habit-mgr-arrow" onclick="moveHabit('${h.id}',1)">↓</span>
+                <span class="habit-mgr-edit" onclick="openModal('editHabit',${i})">편집</span>
+                <span class="habit-mgr-del" onclick="deleteHabit(${i})">삭제</span>
+            </div>
         </div>
     </div>`;}).join('');
     const ts=document.getElementById('timelineSettings');
@@ -1011,19 +1061,20 @@ const CELEBRATE_MESSAGES={
 const TASK_MESSAGES=['오늘 한 건 완료','하나 끝!','잘했어','체크 완료','오늘의 승리','미션 클리어'];
 function pickMsg(cat){const arr=CELEBRATE_MESSAGES[cat]||TASK_MESSAGES;return arr[Math.floor(Math.random()*arr.length)];}
 function toggleHabit(id){
-    const t=td();if(!D.checks[t])D.checks[t]={};
+    const t=vd();if(!D.checks[t])D.checks[t]={};
     const was=D.checks[t][id];D.checks[t][id]=!was;
+    const isToday=t===td();
     if(!was){
-        addXP(10);
-        if(id==='english-grammar')D.englishProgress=Math.min(30,(D.englishProgress||0)+1);
+        if(isToday)addXP(10);
+        if(id==='english-grammar'&&isToday)D.englishProgress=Math.min(30,(D.englishProgress||0)+1);
         const h=D.habits.find(x=>x.id===id);
         if(h)celebrate(CAT_CELEBRATE[h.cat]||'🌸',pickMsg(h.cat));
     }
-    else D.xp=Math.max(0,D.xp-10);
+    else if(isToday)addXP(-10);
     save();render();
 }
 function updateHabitTime(id,v){const h=D.habits.find(x=>x.id===id);if(h&&v){h.time=v;save();render();}}
-function updateTaskTime(idx,v){const t=td();if(D.dailyTasks&&D.dailyTasks[t]&&D.dailyTasks[t][idx]&&v){D.dailyTasks[t][idx].time=v;save();render();}}
+function updateTaskTime(idx,v){const t=vd();if(D.dailyTasks&&D.dailyTasks[t]&&D.dailyTasks[t][idx]&&v){D.dailyTasks[t][idx].time=v;save();render();}}
 function _openTimePicker(initial,onSet){
     const inp=document.createElement('input');
     inp.type='time';inp.value=initial||'12:00';
@@ -1036,7 +1087,7 @@ function _openTimePicker(initial,onSet){
     setTimeout(()=>{inp.focus();if(inp.showPicker){try{inp.showPicker();}catch(e){inp.click();}}else inp.click();},10);
 }
 function editHabitTime(id){const h=D.habits.find(x=>x.id===id);if(!h)return;_openTimePicker(h.time,v=>{h.time=v;save();render();});}
-function editTaskTime(idx){const t=td();if(!D.dailyTasks||!D.dailyTasks[t]||!D.dailyTasks[t][idx])return;const tk=D.dailyTasks[t][idx];_openTimePicker(tk.time,v=>{tk.time=v;save();render();});}
+function editTaskTime(idx){const t=vd();if(!D.dailyTasks||!D.dailyTasks[t]||!D.dailyTasks[t][idx])return;const tk=D.dailyTasks[t][idx];_openTimePicker(tk.time,v=>{tk.time=v;save();render();});}
 const GROWTH_QUOTES=[
     {q:'작은 습관이 쌓여 큰 변화가 돼',s:'— 오늘도 한 걸음'},
     {q:'어제보다 0.1% 나아졌으면 충분해',s:'— 꾸준함의 복리'},
@@ -1066,22 +1117,21 @@ function renderGrowthQuote(){
     el.innerHTML=`<div class="growth-quote-text">"${q.q}"</div><div class="growth-quote-sub">${q.s}</div>`;
 }
 function rerollQuote(){D._quoteIdx=(D._quoteIdx==null?0:D._quoteIdx+1)%GROWTH_QUOTES.length;renderGrowthQuote();}
-function saveRunning(v){const t=td();D.running[t]=parseFloat(v)||0;if(D.running[t]>0){if(!D.checks[t])D.checks[t]={};D.checks[t].running=true;addXP(10);}save();render();}
-document.addEventListener('input',e=>{const t=td();if(!D.journals[t])D.journals[t]={};if(e.target.id==='todoInput'){D.journals[t].todo=e.target.value;save();}if(e.target.id==='gratitudeInput'){D.journals[t].gratitude=e.target.value;save();}});
+function saveRunning(v){const t=vd();D.running[t]=parseFloat(v)||0;if(D.running[t]>0){if(!D.checks[t])D.checks[t]={};D.checks[t].running=true;if(t===td())addXP(10);}save();render();}
+document.addEventListener('input',e=>{const t=vd();if(!D.journals[t])D.journals[t]={};if(e.target.id==='todoInput'){D.journals[t].todo=e.target.value;save();}if(e.target.id==='gratitudeInput'){D.journals[t].gratitude=e.target.value;save();}});
 function updateGoalCurrent(type,idx,val){if(type==='monthly')D.monthlyGoals[idx].current=parseFloat(val)||0;if(type==='weekly')D.weeklyGoals[idx].current=parseFloat(val)||0;save();renderGoals();}
 function addLink(type){const input=document.getElementById(type==='workout'?'newWorkoutLink':'newEnglishLink');if(input.value.trim()){D.links[type].push(input.value.trim());input.value='';save();renderSettings();}}
 function removeLink(type,i){D.links[type].splice(i,1);save();renderSettings();}
 function saveStartDate(){D.startDate=document.getElementById('startDateInput').value;save();render();}
 function saveGardenName(){D.gardenName=document.getElementById('gardenNameInput').value;save();render();}
-function saveBook(){D.book=document.getElementById('bookInput').value;save();}
 function updateTimeline(i,key,val){D.timeline[i][key]=val;D.timeline.sort((a,b)=>a.time.localeCompare(b.time));save();render();}
 function addTimelineItem(){D.timeline.push({time:'12:00',label:'새 일정'});D.timeline.sort((a,b)=>a.time.localeCompare(b.time));save();render();}
 function deleteTimelineItem(i){D.timeline.splice(i,1);save();render();}
 function saveChallengeDays(){const v=parseInt(document.getElementById('challengeDaysInput').value);if(v>=7&&v<=365){D.challengeDays=v;save();render();}}
 function deleteHabit(i){if(confirm(D.habits[i].name+' 삭제할까요?')){D.habits.splice(i,1);save();render();}}
-function toggleRestDay(){const t=td();if(D.restDays[t])delete D.restDays[t];else D.restDays[t]=true;save();render();}
-function saveRestReason(){const t=td();D.restDays[t]=document.getElementById('restReasonInput').value||true;save();}
-function toggleSkip(id){const t=td();if(!D.skips[t])D.skips[t]={};if(D.skips[t][id])delete D.skips[t][id];else D.skips[t][id]=true;save();render();}
+function toggleRestDay(){const t=vd();if(D.restDays[t])delete D.restDays[t];else D.restDays[t]=true;save();render();}
+function saveRestReason(){const t=vd();D.restDays[t]=document.getElementById('restReasonInput').value||true;save();}
+function toggleSkip(id){const t=vd();if(!D.skips[t])D.skips[t]={};if(D.skips[t][id])delete D.skips[t][id];else D.skips[t][id]=true;save();render();}
 function setInsightPeriod(p,el){insightPeriod=p;document.querySelectorAll('.insight-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderInsights();}
 
 // ===== MODALS =====
