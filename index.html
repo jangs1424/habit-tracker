@@ -98,7 +98,7 @@
         .habit-day-count{font-size:13px;color:var(--text-sub)}
         .habit-category{margin-bottom:16px}
         .habit-category-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:0 4px;margin-bottom:8px}
-        .habit-item{background:var(--card);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.03);transition:transform .1s}
+        .habit-item{background:var(--card);border-radius:var(--radius-sm);padding:12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.03);transition:transform .1s}
         .habit-item:active{transform:scale(.98)}
         .habit-item.completed{opacity:.55}
         .habit-item.completed .habit-item-name{text-decoration:line-through}
@@ -119,11 +119,11 @@
         @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
         .habit-check.checked::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
         .habit-item-info{min-width:0}
-        input.habit-time-pill{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:4px 7px;border-radius:8px;border:none;outline:none;font-family:inherit;cursor:pointer;text-align:center;width:auto;min-width:64px;-webkit-appearance:none;appearance:none;box-sizing:content-box}
+        input.habit-time-pill{font-size:11px;color:var(--primary);font-weight:700;background:var(--primary-light);padding:4px 6px;border-radius:8px;border:none;outline:none;font-family:inherit;cursor:pointer;text-align:center;width:62px;flex-shrink:0;-webkit-appearance:none;appearance:none;box-sizing:border-box;height:26px}
         input.habit-time-pill::-webkit-calendar-picker-indicator{display:none}
-        input.habit-time-pill::-webkit-date-and-time-value{text-align:center;margin:0}
-        .habit-cat-icon{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;font-size:14px;flex-shrink:0;line-height:1;border:1.5px solid}
-        .habit-task-pill{font-size:10px;font-weight:700;color:#fff;background:var(--warning);padding:2px 6px;border-radius:6px;white-space:nowrap}
+        input.habit-time-pill::-webkit-date-and-time-value{text-align:center;margin:0;padding:0}
+        .habit-cat-icon{font-size:22px;flex-shrink:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px}
+        .habit-task-pill{font-size:10px;font-weight:700;color:#fff;background:var(--warning);padding:2px 6px;border-radius:6px;white-space:nowrap;display:inline-block;margin-left:4px;vertical-align:middle}
         .growth-quote{background:linear-gradient(135deg,var(--primary-light),#F0EEFF);border-radius:var(--radius);padding:18px 20px;margin:16px 0;text-align:center;position:relative;overflow:hidden;cursor:pointer}
         .growth-quote::before{content:'✨';position:absolute;top:-10px;left:-10px;font-size:60px;opacity:.1;transform:rotate(-15deg)}
         .growth-quote-text{font-size:13px;font-weight:600;color:var(--primary);line-height:1.5;position:relative;z-index:1}
@@ -134,7 +134,7 @@
         .task-add-row button{padding:10px 14px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-weight:600;font-size:13px;cursor:pointer}
         .task-delete-btn{font-size:16px;color:var(--text-light);cursor:pointer;padding:0 4px;line-height:1}
         .habit-item-info{flex:1;min-width:0}
-        .habit-item-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+        .habit-item-name{font-size:14px;font-weight:500;line-height:1.3;overflow:hidden;text-overflow:ellipsis}
         .habit-item-detail{font-size:11px;color:var(--text-sub);margin-top:2px}
         .habit-item-link{font-size:11px;color:var(--primary);text-decoration:none;margin-top:2px;display:inline-block}
         .habit-input{width:52px;padding:4px 6px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;text-align:center;outline:none}
@@ -273,10 +273,20 @@
         .nav-icon{font-size:22px}
 
         .page{display:none}.page.active{display:block}
-        .celebration{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;z-index:200;pointer-events:none}
-        .celebration.show{display:flex}
-        .celebration-emoji{font-size:80px;animation:celebPop 1s ease forwards}
-        @keyframes celebPop{0%{transform:scale(0);opacity:1}50%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:0}}
+        .celebration{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;z-index:200;pointer-events:none;opacity:0;transition:opacity .2s}
+        .celebration.show{opacity:1}
+        .celebration-inner{display:flex;flex-direction:column;align-items:center;gap:18px;transform:scale(0)}
+        .celebration.show .celebration-inner{animation:celebPop 1.6s cubic-bezier(.34,1.56,.64,1) forwards}
+        @keyframes celebPop{0%{transform:scale(0) rotate(-180deg)}15%{transform:scale(1.3) rotate(15deg)}30%{transform:scale(.95) rotate(-8deg)}45%{transform:scale(1.1) rotate(4deg)}60%{transform:scale(1) rotate(0)}85%{transform:scale(1)}100%{transform:scale(1.1) translateY(-20px);opacity:0}}
+        .celebration-emoji{font-size:140px;filter:drop-shadow(0 12px 30px rgba(0,0,0,.2));line-height:1}
+        .celebration-text{font-size:16px;font-weight:700;color:var(--primary);background:#fff;padding:12px 22px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.15);white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;text-align:center}
+        .celebration-spark{position:absolute;font-size:28px;opacity:0;pointer-events:none}
+        .celebration.show .celebration-spark{animation:sparkFly 1.4s ease-out forwards}
+        .celebration-spark:nth-child(1){animation-delay:.1s}
+        .celebration-spark:nth-child(2){animation-delay:.2s}
+        .celebration-spark:nth-child(3){animation-delay:.15s}
+        .celebration-spark:nth-child(4){animation-delay:.25s}
+        @keyframes sparkFly{0%{opacity:0;transform:translate(0,0) scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx,80px),var(--dy,-80px)) scale(1.2) rotate(360deg)}}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -392,7 +402,16 @@
     <div class="modal" id="modalContent"></div>
 </div>
 
-<div class="celebration" id="celebration"><div class="celebration-emoji" id="celebEmoji">🎉</div></div>
+<div class="celebration" id="celebration">
+    <span class="celebration-spark" style="--dx:-90px;--dy:-60px">✨</span>
+    <span class="celebration-spark" style="--dx:90px;--dy:-70px">⭐</span>
+    <span class="celebration-spark" style="--dx:-70px;--dy:80px">💫</span>
+    <span class="celebration-spark" style="--dx:80px;--dy:90px">✨</span>
+    <div class="celebration-inner">
+        <div class="celebration-emoji" id="celebEmoji">🎉</div>
+        <div class="celebration-text" id="celebText"></div>
+    </div>
+</div>
 
 <div class="bottom-nav">
     <div class="nav-item active" onclick="switchPage('home',this)"><span class="nav-icon">🏠</span><span>홈</span></div>
@@ -418,19 +437,20 @@ const DEFAULT_HABITS = [
     {id:'cleaning',name:'청소',cat:'집안일',time:'11:00',days:[3]},
     {id:'organize',name:'정리+장보기',cat:'집안일',time:'11:00',days:[5]},
     {id:'marketing',name:'마케팅 아티클',cat:'성장',time:'11:30',detail:'1개',days:[1,2,3,4,5]},
-    {id:'work-block',name:'업무 블록',cat:'생활',time:'12:00',detail:'12~20시',days:[1,2,3,4,5]},
+    {id:'work-part1',name:'업무 파트1',cat:'콘텐츠',time:'12:00',detail:'크리에이티브 (12~15시)',days:[1,2,3,4,5]},
     {id:'reels-plan',name:'릴스 기획/소재',cat:'콘텐츠',time:'12:00',days:[1,4]},
     {id:'reels-shoot',name:'릴스 촬영',cat:'콘텐츠',time:'12:00',days:[2,5]},
     {id:'reels-edit',name:'릴스 편집',cat:'콘텐츠',time:'12:00',days:[3]},
     {id:'planning',name:'기획 연습',cat:'성장',time:'14:00',detail:'레퍼런스',days:[3]},
     {id:'hobby',name:'취미 탐색',cat:'라이프',time:'15:00',days:[6]},
+    {id:'work-part2',name:'업무 파트2',cat:'수익',time:'16:00',detail:'실행/수익 (16~20시)',days:[1,2,3,4,5]},
     {id:'income-shop',name:'쇼핑영상',cat:'수익',time:'16:00',days:[1,3]},
     {id:'income-thread',name:'스레드 운영',cat:'수익',time:'16:00',days:[2,4]},
     {id:'income-coupang',name:'쿠팡 정리',cat:'수익',time:'16:00',days:[5]},
     {id:'reading',name:'독서',cat:'성장',time:'20:00',detail:'30분',days:[2,4,6]},
     {id:'weekly-review',name:'다음 주 훑어보기',cat:'생활',time:'20:00',detail:'5분',days:[0]},
 ];
-const HABIT_TIME_FALLBACK={morning:'09:00',meditation:'09:10',workout:'09:30',running:'09:30','free-workout':'10:00','english-shadow':'10:30','english-grammar':'10:30',japanese:'10:45',diet:'11:00',laundry:'11:00',cleaning:'11:00',organize:'11:00',marketing:'11:30','work-block':'12:00','reels-plan':'12:00','reels-shoot':'12:00','reels-edit':'12:00',planning:'14:00',hobby:'15:00','income-shop':'16:00','income-thread':'16:00','income-coupang':'16:00',reading:'20:00','weekly-review':'20:00'};
+const HABIT_TIME_FALLBACK={morning:'09:00',meditation:'09:10',workout:'09:30',running:'09:30','free-workout':'10:00','english-shadow':'10:30','english-grammar':'10:30',japanese:'10:45',diet:'11:00',laundry:'11:00',cleaning:'11:00',organize:'11:00',marketing:'11:30','work-part1':'12:00','work-part2':'16:00','work-block':'12:00','reels-plan':'12:00','reels-shoot':'12:00','reels-edit':'12:00',planning:'14:00',hobby:'15:00','income-shop':'16:00','income-thread':'16:00','income-coupang':'16:00',reading:'20:00','weekly-review':'20:00'};
 
 const DEFAULT_TIMELINE = [
     {time:'09:00',label:'기상 + 명상'},{time:'09:30',label:'운동'},{time:'10:30',label:'영어'},
@@ -481,7 +501,21 @@ function migrateData(d){
     if(!d.restDays)d.restDays={};
     if(!d.skips)d.skips={};
     if(!d.dailyTasks)d.dailyTasks={};
-    if(d.habits)d.habits.forEach(h=>{if(!h.time)h.time=HABIT_TIME_FALLBACK[h.id]||'12:00';});
+    if(d.habits){
+        const wbIdx=d.habits.findIndex(h=>h.id==='work-block');
+        if(wbIdx>=0){
+            const orig=d.habits[wbIdx];
+            d.habits.splice(wbIdx,1,
+                {id:'work-part1',name:'업무 파트1',cat:'콘텐츠',time:'12:00',detail:'크리에이티브 (12~15시)',days:orig.days||[1,2,3,4,5]},
+                {id:'work-part2',name:'업무 파트2',cat:'수익',time:'16:00',detail:'실행/수익 (16~20시)',days:orig.days||[1,2,3,4,5]}
+            );
+            if(d.habitOrder){
+                const i=d.habitOrder.indexOf('work-block');
+                if(i>=0)d.habitOrder.splice(i,1,'work-part1','work-part2');
+            }
+        }
+        d.habits.forEach(h=>{if(!h.time)h.time=HABIT_TIME_FALLBACK[h.id]||'12:00';});
+    }
     return d;
 }
 function loadData(){
@@ -644,7 +678,9 @@ function renderHabits(){
             if(sk)html+=`<div class="habit-check" style="border-color:var(--warning);color:var(--warning);font-size:11px;display:flex;align-items:center;justify-content:center">⏭</div>`;
             else html+=`<div class="habit-check ${ck?'checked':''}" onclick="toggleHabit('${h.id}')"></div>`;
             const ic=CAT_ICONS[h.cat]||'•';
-            html+=`<div class="habit-item-info"><div class="habit-item-name"><input type="time" class="habit-time-pill" value="${h.time||''}" onchange="updateHabitTime('${h.id}',this.value)" onclick="event.stopPropagation()"><span class="habit-cat-icon" style="background:${cc}25;border-color:${cc}" title="${h.cat||''}">${ic}</span>${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
+            html+=`<input type="time" class="habit-time-pill" value="${h.time||''}" onchange="updateHabitTime('${h.id}',this.value)" onclick="event.stopPropagation()">`;
+            html+=`<span class="habit-cat-icon" title="${h.cat||''}">${ic}</span>`;
+            html+=`<div class="habit-item-info"><div class="habit-item-name">${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasLink&&D.links.workout.length?`<a class="habit-item-link" href="${D.links.workout[0]}" target="_blank">영상 →</a>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
             if(h.hasInput&&!sk)html+=`<div><input class="habit-input" type="number" step="0.1" value="${D.running[t]||''}" onchange="saveRunning(this.value)" placeholder="0"><span class="habit-input-unit">${h.unit}</span></div>`;
             if(!isRest)html+=`<div class="skip-btn ${sk?'active':''}" onclick="toggleSkip('${h.id}')">${sk?'스킵됨':'스킵'}</div>`;
             html+=`</div>`;
@@ -653,7 +689,9 @@ function renderHabits(){
             const cls=tk.done?'completed':'';
             html+=`<div class="habit-item ${cls}">`;
             html+=`<div class="habit-check ${tk.done?'checked':''}" onclick="toggleDailyTask(${i})"></div>`;
-            html+=`<div class="habit-item-info"><div class="habit-item-name"><input type="time" class="habit-time-pill" value="${tk.time||''}" onchange="updateTaskTime(${i},this.value)" onclick="event.stopPropagation()"><span class="habit-task-pill">오늘</span>${tk.name}</div></div>`;
+            html+=`<input type="time" class="habit-time-pill" value="${tk.time||''}" onchange="updateTaskTime(${i},this.value)" onclick="event.stopPropagation()">`;
+            html+=`<span class="habit-cat-icon">🎯</span>`;
+            html+=`<div class="habit-item-info"><div class="habit-item-name">${tk.name}<span class="habit-task-pill">오늘</span></div></div>`;
             html+=`<div class="task-delete-btn" onclick="deleteDailyTask(${i})">×</div>`;
             html+=`</div>`;
         }
@@ -763,13 +801,15 @@ function sortItems(items){
     const ord=D.habitOrder||[];
     const idx={};ord.forEach((id,i)=>idx[id]=i);
     return [...items].sort((a,b)=>{
-        if(a.kind==='task'&&b.kind==='habit')return 1;
-        if(a.kind==='habit'&&b.kind==='task')return -1;
+        const tc=(a.time||'99:99').localeCompare(b.time||'99:99');
+        if(tc!==0)return tc;
         if(a.kind==='habit'&&b.kind==='habit'){
             const ai=idx[a.ref.id]??9999,bi=idx[b.ref.id]??9999;
-            if(ai!==bi)return ai-bi;
+            return ai-bi;
         }
-        return (a.time||'99:99').localeCompare(b.time||'99:99');
+        if(a.kind==='habit')return -1;
+        if(b.kind==='habit')return 1;
+        return 0;
     });
 }
 function getSortedHabits(habits){
@@ -805,7 +845,8 @@ function toggleDailyTask(i){
     if(!D.dailyTasks||!D.dailyTasks[t]||!D.dailyTasks[t][i])return;
     const was=D.dailyTasks[t][i].done;
     D.dailyTasks[t][i].done=!was;
-    if(!was)addXP(10);else D.xp=Math.max(0,D.xp-10);
+    if(!was){addXP(10);celebrate('🎯',TASK_MESSAGES[Math.floor(Math.random()*TASK_MESSAGES.length)]);}
+    else D.xp=Math.max(0,D.xp-10);
     save();render();
 }
 function deleteDailyTask(i){
@@ -852,6 +893,19 @@ function renderSettings(){
 }
 
 // ===== ACTIONS =====
+const CELEBRATE_MESSAGES={
+    '몸':['더 건강해지고 있어요','근육이 기억해요','몸이 가벼워져요','체력 +1','내일의 나에게 선물','자세가 펴지는 중','혈액순환 쌉가능'],
+    '스킬':['실력이 한 줄 쌓였어요','뇌가 업그레이드 중','미래의 무기 장착','1cm 더 전문가','꾸준함의 복리','자신감이 자라요'],
+    '콘텐츠':['팔로워들이 기다리는 중','크리에이티브 충전','한 장면 더 쌓임','팬 한 명 예약','알고리즘이 좋아할 거야','세상에 네 이야기 +1'],
+    '수익':['돈나무 한 뼘 자람','작은 씨앗이 쌓이는 중','경제적 자유 한 스텝','미래 통장이 웃어요','파이프라인 +1','자산이 움직여요'],
+    '마인드':['마음이 맑아져요','오늘도 나를 챙겼네','자기 돌봄 완료','내면이 단단해져요','평온 +1','자기 사랑 적립'],
+    '성장':['한 챕터 더 똑똑해졌어요','뇌 주름 +1','지식의 복리','어제보다 성장','시야가 넓어져요','새로운 관점 장착'],
+    '생활':['오늘도 일상 챙김','루틴 완성도 ↑','안정감이 쌓여요','하루가 반짝','기본기 단단','생활력 상승'],
+    '집안일':['집이 깔끔해졌어','공간이 숨을 쉬어요','미래의 나 감사','정리=마음정리','쾌적함 +1','환경 업그레이드'],
+    '라이프':['인생이 풍요로워져요','설렘 장전','나를 위한 시간','라이프 밸런스 ↑','즐거움 적립','영감이 쌓여요']
+};
+const TASK_MESSAGES=['오늘 한 건 완료','하나 끝!','잘했어','체크 완료','오늘의 승리','미션 클리어'];
+function pickMsg(cat){const arr=CELEBRATE_MESSAGES[cat]||TASK_MESSAGES;return arr[Math.floor(Math.random()*arr.length)];}
 function toggleHabit(id){
     const t=td();if(!D.checks[t])D.checks[t]={};
     const was=D.checks[t][id];D.checks[t][id]=!was;
@@ -859,7 +913,7 @@ function toggleHabit(id){
         addXP(10);
         if(id==='english-grammar')D.englishProgress=Math.min(30,(D.englishProgress||0)+1);
         const h=D.habits.find(x=>x.id===id);
-        if(h)celebrate(CAT_CELEBRATE[h.cat]||'🎉');
+        if(h)celebrate(CAT_CELEBRATE[h.cat]||'🎉',pickMsg(h.cat));
     }
     else D.xp=Math.max(0,D.xp-10);
     save();render();
@@ -993,7 +1047,7 @@ function calcHabitStreak(hid){let s=0,d=new Date();for(let i=0;i<D.challengeDays
 function getWeekData(){const days=['일','월','화','수','목','금','토'];let tp=0,cnt=0,bp=0,bd='-',wx=0;const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=date.toISOString().split('T')[0];if(ds>td())break;const c=compForDate(ds);tp+=c;cnt++;if(c>bp){bp=c;bd=days[date.getDay()];}const h=getHabitsForDay(date.getDay());const dd=D.checks[ds]||{};wx+=h.filter(x=>dd[x.id]).length*10;}return{avgPct:cnt?Math.round(tp/cnt*100):0,bestDay:bd,weekXP:wx};}
 function getCatStats(){const s={};CATEGORIES.forEach(c=>{s[c]={t:0,d:0};});const d=new Date(),sw=new Date(d);sw.setDate(d.getDate()-d.getDay()+1);for(let i=0;i<7;i++){const date=new Date(sw);date.setDate(sw.getDate()+i);const ds=date.toISOString().split('T')[0];if(ds>td())break;const h=getHabitsForDay(date.getDay());const dd=D.checks[ds]||{};h.forEach(x=>{if(s[x.cat]){s[x.cat].t++;if(dd[x.id])s[x.cat].d++;}});}const r={};CATEGORIES.forEach(c=>{r[c]=s[c].t?Math.round(s[c].d/s[c].t*100):0;});return r;}
 function getPeriodDates(){/* placeholder */return[];}
-function celebrate(e){const el=document.getElementById('celebration');document.getElementById('celebEmoji').textContent=e;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1200);}
+function celebrate(e,msg){const el=document.getElementById('celebration');document.getElementById('celebEmoji').textContent=e;const tx=document.getElementById('celebText');if(tx)tx.textContent=msg||'';el.classList.remove('show');void el.offsetWidth;el.classList.add('show');clearTimeout(window._celebT);window._celebT=setTimeout(()=>el.classList.remove('show'),1600);}
 function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');render();}
 
 render();
