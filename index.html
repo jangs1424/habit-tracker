@@ -97,7 +97,8 @@
         .date-nav{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;background:var(--card);border-radius:var(--radius-sm);padding:8px 12px;box-shadow:var(--shadow)}
         .date-nav-btn{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-sub);flex-shrink:0}
         .date-nav-btn:disabled{opacity:.3;cursor:not-allowed}
-        .date-nav-label{font-size:13px;font-weight:600;flex:1;text-align:center}
+        .date-nav-label{font-size:13px;font-weight:600;flex:1;text-align:center;cursor:pointer;padding:4px 8px;border-radius:8px;user-select:none}
+        .date-nav-label:active{background:var(--border)}
         .date-nav-today{font-size:11px;color:var(--primary);font-weight:600;cursor:pointer;padding:4px 10px;border-radius:99px;background:var(--primary-light)}
         .date-nav-today.hidden{display:none}
         .past-indicator{font-size:11px;color:var(--warning);font-weight:600;margin-left:4px}
@@ -292,7 +293,7 @@
         }
         .celebration-emoji{font-size:120px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.15));line-height:1;animation:emojiFloat 2.4s ease-in-out}
         @keyframes emojiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-        .celebration-text{font-size:15px;font-weight:600;color:var(--primary);background:#fff;padding:12px 22px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.12);white-space:nowrap;max-width:85vw;overflow:hidden;text-overflow:ellipsis;text-align:center;letter-spacing:-.2px}
+        .celebration-text{font-size:17px;font-weight:600;color:var(--primary);max-width:85vw;text-align:center;letter-spacing:-.3px;line-height:1.4;text-shadow:0 2px 10px rgba(255,255,255,.95),0 0 20px rgba(255,255,255,.85),0 0 40px rgba(250,251,254,.7);padding:0 20px}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -330,7 +331,7 @@
         <div class="habit-day-header"><div class="habit-day-title" id="habitDayTitle">월요일</div><div class="habit-day-count" id="habitDayCount">0/0</div></div>
         <div class="date-nav">
             <button class="date-nav-btn" onclick="changeViewDate(-1)">‹</button>
-            <div class="date-nav-label" id="dateNavLabel"></div>
+            <div class="date-nav-label" id="dateNavLabel" onclick="pickDate()"></div>
             <span class="date-nav-today hidden" id="dateNavToday" onclick="goToday()">오늘</span>
             <button class="date-nav-btn" id="dateNavNext" onclick="changeViewDate(1)">›</button>
         </div>
@@ -512,6 +513,17 @@ function changeViewDate(delta){
     viewDate=ds;render();
 }
 function goToday(){viewDate=new Date().toISOString().split('T')[0];render();}
+function pickDate(){
+    const inp=document.createElement('input');
+    inp.type='date';inp.value=viewDate;inp.max=new Date().toISOString().split('T')[0];
+    inp.style.cssText='position:fixed;top:50%;left:50%;width:1px;height:1px;opacity:0;border:none';
+    document.body.appendChild(inp);
+    let done=false;
+    const finish=()=>{if(done)return;done=true;if(inp.value)viewDate=inp.value;render();if(inp.parentNode)inp.parentNode.removeChild(inp);};
+    inp.addEventListener('change',finish);
+    inp.addEventListener('blur',()=>setTimeout(finish,200));
+    setTimeout(()=>{inp.focus();if(inp.showPicker){try{inp.showPicker();}catch(e){inp.click();}}else inp.click();},10);
+}
 let insightPeriod='week';
 
 function migrateData(d){
@@ -553,7 +565,7 @@ function loadData(){
         challengeDays:180,restDays:{},skips:{}
     };
 }
-function save(){localStorage.setItem('habit180v3',JSON.stringify(D));syncToCloud();}
+function save(){D._syncTime=Date.now();localStorage.setItem('habit180v3',JSON.stringify(D));syncToCloud();}
 
 // ===== SUPABASE SYNC =====
 const SUPABASE_URL='https://zziszaabzgzwkfqjrwxy.supabase.co';
@@ -936,17 +948,17 @@ function renderSettings(){
 
 // ===== ACTIONS =====
 const CELEBRATE_MESSAGES={
-    '몸':['더 건강해지고 있어요','근육이 기억해요','몸이 가벼워져요','체력 +1','내일의 나에게 선물','자세가 펴지는 중','혈액순환 쌉가능'],
-    '스킬':['실력이 한 줄 쌓였어요','뇌가 업그레이드 중','미래의 무기 장착','1cm 더 전문가','꾸준함의 복리','자신감이 자라요'],
-    '콘텐츠':['팔로워들이 기다리는 중','크리에이티브 충전','한 장면 더 쌓임','팬 한 명 예약','알고리즘이 좋아할 거야','세상에 네 이야기 +1'],
-    '수익':['돈나무 한 뼘 자람','작은 씨앗이 쌓이는 중','경제적 자유 한 스텝','미래 통장이 웃어요','파이프라인 +1','자산이 움직여요'],
-    '마인드':['마음이 맑아져요','오늘도 나를 챙겼네','자기 돌봄 완료','내면이 단단해져요','평온 +1','자기 사랑 적립'],
-    '성장':['한 챕터 더 똑똑해졌어요','뇌 주름 +1','지식의 복리','어제보다 성장','시야가 넓어져요','새로운 관점 장착'],
-    '생활':['오늘도 일상 챙김','루틴 완성도 ↑','안정감이 쌓여요','하루가 반짝','기본기 단단','생활력 상승'],
-    '집안일':['집이 깔끔해졌어','공간이 숨을 쉬어요','미래의 나 감사','정리=마음정리','쾌적함 +1','환경 업그레이드'],
-    '라이프':['인생이 풍요로워져요','설렘 장전','나를 위한 시간','라이프 밸런스 ↑','즐거움 적립','영감이 쌓여요']
+    '몸':['더 건강해지고 있어요','몸이 고마워하고 있어요','내일이 한결 가벼울 거예요','건강이 차곡차곡 쌓이고 있어요','근육이 기억해줄 거예요','오늘의 움직임이 내일이 돼요'],
+    '스킬':['한 단계 가까워지고 있어요','실력이 조용히 자라고 있어요','미래의 내가 고마워할 거예요','차근차근 나아가고 있어요','오늘도 한 걸음 배웠어요'],
+    '콘텐츠':['이야기가 쌓이고 있어요','한 걸음 더 창작자가 됐어요','세상에 내 흔적이 남아요','오늘 만든 것이 내일 닿을 거예요','창작의 근육이 자라고 있어요'],
+    '수익':['미래가 한 뼘 가까워졌어요','노력이 조용히 쌓이고 있어요','자유에 한 걸음 다가갔어요','오늘 뿌린 씨앗이 자라고 있어요','꾸준함이 결실이 돼요'],
+    '마인드':['마음이 맑아지고 있어요','오늘도 나를 챙겼어요','내면이 단단해지고 있어요','스스로를 잘 돌보고 있어요','고요함이 쌓이고 있어요'],
+    '성장':['어제보다 한 뼘 컸어요','알고 있는 게 늘었어요','시야가 넓어지고 있어요','지식이 쌓이고 있어요','생각이 깊어지고 있어요'],
+    '생활':['하루가 정돈되고 있어요','좋은 리듬이 쌓이고 있어요','안정감이 커지고 있어요','오늘도 나답게 보냈어요','일상이 단단해지고 있어요'],
+    '집안일':['공간이 가벼워졌어요','집이 고마워할 거예요','마음까지 정리된 기분이에요','쾌적함이 한 겹 쌓였어요','내일의 내가 편해져요'],
+    '라이프':['인생이 조금 더 풍요로워졌어요','나를 위한 시간이었어요','오늘이 따뜻해졌어요','삶의 결이 고와지고 있어요','설렘이 하나 쌓였어요']
 };
-const TASK_MESSAGES=['오늘 한 건 완료','하나 끝!','잘했어','체크 완료','오늘의 승리','미션 클리어'];
+const TASK_MESSAGES=['오늘 하나 해냈어요','잘하고 있어요','한 걸음 나아갔어요','수고했어요','오늘의 나, 멋져요'];
 function pickMsg(cat){const arr=CELEBRATE_MESSAGES[cat]||TASK_MESSAGES;return arr[Math.floor(Math.random()*arr.length)];}
 function toggleHabit(id){
     const t=vd();if(!D.checks[t])D.checks[t]={};
