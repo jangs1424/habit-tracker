@@ -139,10 +139,12 @@
         .task-add-row input.task-add-time{width:92px;padding:10px 8px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;outline:none;font-family:inherit}
         .task-add-row button{padding:10px 14px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-weight:600;font-size:13px;cursor:pointer}
         .task-delete-btn{font-size:16px;color:var(--text-light);cursor:pointer;padding:0 4px;line-height:1}
-        .habit-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
-        .habit-chip{font-size:11px;color:var(--primary);background:var(--primary-light);padding:3px 8px;border-radius:8px;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;border:none;font-family:inherit}
+        .habit-chips{display:flex;gap:4px;flex-shrink:0;align-items:center;max-width:52%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+        .habit-chips::-webkit-scrollbar{display:none}
+        .habit-chip{font-size:11px;color:var(--primary);background:var(--primary-light);padding:3px 8px;border-radius:8px;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;border:none;font-family:inherit;flex-shrink:0}
         .habit-chip:active{opacity:.6}
         .habit-chip.book{background:#FEF3C7;color:#92400E}
+        .habit-chip.book.current{background:#F59E0B;color:#fff}
         .habit-item-info{flex:1;min-width:0}
         .habit-item-name{font-size:14px;font-weight:500;line-height:1.3;overflow:hidden;text-overflow:ellipsis}
         .habit-item-detail{font-size:11px;color:var(--text-sub);margin-top:2px}
@@ -519,17 +521,7 @@ function changeViewDate(delta){
     viewDate=ds;render();
 }
 function goToday(){viewDate=toLocalISO();render();}
-function pickDate(){
-    const inp=document.createElement('input');
-    inp.type='date';inp.value=viewDate;inp.max=toLocalISO();
-    inp.style.cssText='position:fixed;top:50%;left:50%;width:1px;height:1px;opacity:0;border:none';
-    document.body.appendChild(inp);
-    let done=false;
-    const finish=()=>{if(done)return;done=true;if(inp.value)viewDate=inp.value;render();if(inp.parentNode)inp.parentNode.removeChild(inp);};
-    inp.addEventListener('change',finish);
-    inp.addEventListener('blur',()=>setTimeout(finish,200));
-    setTimeout(()=>{inp.focus();if(inp.showPicker){try{inp.showPicker();}catch(e){inp.click();}}else inp.click();},10);
-}
+function pickDate(){openModal('pickDate',{current:viewDate});}
 let insightPeriod='week';
 
 function migrateData(d){
@@ -740,10 +732,11 @@ function renderHabits(){
             html+=`<span class="habit-cat-icon" title="${h.cat||''}">${ic}</span>`;
             const links=getHabitLinks(h);
             const isReading=h.id==='reading';
-            let chips='';
-            if(links.length)chips+=`<div class="habit-chips">${links.map((u,i)=>`<a class="habit-chip" href="${u}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▶ ${shortLinkLabel(u,'영상 '+(i+1))}</a>`).join('')}</div>`;
-            if(isReading&&D.books&&D.books.length)chips+=`<div class="habit-chips">${D.books.map(b=>`<span class="habit-chip book">📖 ${b}</span>`).join('')}</div>`;
-            html+=`<div class="habit-item-info"><div class="habit-item-name">${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}${chips}</div>`;
+            const chipEls=[];
+            links.forEach((u,i)=>chipEls.push(`<a class="habit-chip" href="${u}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▶ ${shortLinkLabel(u,'영상 '+(i+1))}</a>`));
+            if(isReading&&D.books&&D.books.length)D.books.forEach((b,bi)=>chipEls.push(`<span class="habit-chip book${D.currentBook===bi?' current':''}" onclick="event.stopPropagation();setCurrentBook(${bi})">📖 ${b}</span>`));
+            html+=`<div class="habit-item-info"><div class="habit-item-name">${h.name}</div>${h.detail?`<div class="habit-item-detail">${h.detail}</div>`:''}${h.hasProgress?`<div class="habit-item-detail">${D.englishProgress}/30강</div>`:''}</div>`;
+            if(chipEls.length)html+=`<div class="habit-chips">${chipEls.join('')}</div>`;
             if(h.hasInput&&!sk)html+=`<div><input class="habit-input" type="number" step="0.1" value="${D.running[t]||''}" onchange="saveRunning(this.value)" placeholder="0"><span class="habit-input-unit">${h.unit}</span></div>`;
             if(!isRest)html+=`<div class="skip-btn ${sk?'active':''}" onclick="toggleSkip('${h.id}')">${sk?'스킵됨':'스킵'}</div>`;
             html+=`</div>`;
@@ -988,8 +981,14 @@ function toggleHabit(id){
 function updateHabitTime(id,v){const h=D.habits.find(x=>x.id===id);if(h&&v){h.time=v;save();render();}}
 function updateTaskTime(idx,v){const t=vd();if(D.dailyTasks&&D.dailyTasks[t]&&D.dailyTasks[t][idx]&&v){D.dailyTasks[t][idx].time=v;save();render();}}
 function _nowHHMM(){const n=new Date();return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;}
-function editHabitTime(id){const h=D.habits.find(x=>x.id===id);if(!h)return;h.time=_nowHHMM();save();render();}
-function editTaskTime(idx){const t=vd();if(!D.dailyTasks||!D.dailyTasks[t]||!D.dailyTasks[t][idx])return;D.dailyTasks[t][idx].time=_nowHHMM();save();render();}
+function editHabitTime(id){const h=D.habits.find(x=>x.id===id);if(!h)return;openModal('timeEdit',{target:'habit',id,current:h.time||'12:00',name:h.name});}
+function editTaskTime(idx){const t=vd();if(!D.dailyTasks||!D.dailyTasks[t]||!D.dailyTasks[t][idx])return;const tk=D.dailyTasks[t][idx];openModal('timeEdit',{target:'task',idx,current:tk.time||'12:00',name:tk.name});}
+function _applyTimeEdit(t){const ctx=window._tCtx;if(!ctx||!t)return;if(ctx.target==='habit'){const h=D.habits.find(x=>x.id===ctx.id);if(h)h.time=t;}else{const day=vd();if(D.dailyTasks[day]&&D.dailyTasks[day][ctx.idx])D.dailyTasks[day][ctx.idx].time=t;}window._tCtx=null;save();closeModal();render();}
+function setTimeNow(){_applyTimeEdit(_nowHHMM());}
+function saveManualTime(){const v=document.getElementById('mTimeEditInput').value;if(v)_applyTimeEdit(v);}
+function applyDatePick(){const v=document.getElementById('mDatePickInput').value;if(v){viewDate=v;closeModal();render();}}
+function pickTodayInModal(){viewDate=toLocalISO();closeModal();render();}
+function setCurrentBook(idx){D.currentBook=idx;save();render();}
 const GROWTH_QUOTES=[
     {q:'작은 습관이 쌓여 큰 변화가 돼',s:'— 오늘도 한 걸음'},
     {q:'어제보다 0.1% 나아졌으면 충분해',s:'— 꾸준함의 복리'},
@@ -1082,6 +1081,20 @@ function openModal(type,arg){
             ${D.weeklyGoals.map((g,i)=>`<div class="goal-edit-row"><input value="${g.name}" onchange="D.weeklyGoals[${i}].name=this.value;save()"><input type="number" value="${g.target}" style="width:60px" onchange="D.weeklyGoals[${i}].target=parseFloat(this.value);save()"></div>`).join('')}
             <button class="btn-outline btn-sm" onclick="D.weeklyGoals.push({name:'새 목표',target:1,current:0});save();openModal('weeklyGoals')">+ 추가</button>
             <div class="modal-actions"><button class="btn" onclick="closeModal();renderGoals()">완료</button></div>`;
+    }
+    else if(type==='timeEdit'){
+        window._tCtx=arg;
+        m.innerHTML=`<h3>시간 수정 · ${arg.name||''}</h3>
+            <div class="modal-field"><label>현재 설정</label><div style="font-size:18px;font-weight:700;color:var(--primary)">${arg.current}</div></div>
+            <button class="btn-outline" style="width:100%;margin-bottom:14px" onclick="setTimeNow()">⏰ 지금 시간 (${_nowHHMM()})으로</button>
+            <div class="modal-field"><label>직접 입력</label><input type="time" id="mTimeEditInput" value="${arg.current}" style="font-size:16px;padding:12px;width:100%;border:1.5px solid var(--border);border-radius:12px;outline:none"></div>
+            <div class="modal-actions"><button class="btn" onclick="saveManualTime()">저장</button><button class="btn-outline" onclick="closeModal()">취소</button></div>`;
+    }
+    else if(type==='pickDate'){
+        m.innerHTML=`<h3>날짜 선택</h3>
+            <div class="modal-field"><input type="date" id="mDatePickInput" value="${arg.current}" max="${toLocalISO()}" style="font-size:16px;padding:12px;width:100%;border:1.5px solid var(--border);border-radius:12px;outline:none"></div>
+            <button class="btn-outline" style="width:100%;margin-bottom:12px" onclick="pickTodayInModal()">오늘로 이동</button>
+            <div class="modal-actions"><button class="btn" onclick="applyDatePick()">이 날짜 보기</button><button class="btn-outline" onclick="closeModal()">취소</button></div>`;
     }
     o.classList.add('show');
 }
