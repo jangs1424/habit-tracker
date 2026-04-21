@@ -420,7 +420,7 @@
         <div class="settings-card"><h3>📚 읽는 책</h3><div id="booksList"></div><div class="settings-row"><input class="settings-input" id="newBookInput" placeholder="책 제목 추가"><button class="btn btn-sm" onclick="addBook()">추가</button></div></div>
         <div class="settings-card"><h3>레벨/XP 초기화</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">현재: Lv.<span id="curLv"></span> · XP <span id="curXp"></span></div><button class="btn-outline btn-sm" style="width:100%" onclick="resetLevel()">레벨 1로 초기화</button></div>
         <div class="settings-card"><h3>시간 기본값 복원</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">9시 기상 · 09:10 명상 · 09:30 홈트/러닝 · ... 기본 타임라인으로 되돌려요</div><button class="btn-outline btn-sm" style="width:100%" onclick="resetHabitTimes()">기본 시간으로 복원</button></div>
-        <div style="text-align:center;font-size:10px;color:var(--text-light);padding:8px 0">v2026-04-21-g</div>
+        <div style="text-align:center;font-size:10px;color:var(--text-light);padding:8px 0">v2026-04-22-a</div>
         <div class="settings-card"><h3>영어 학습 링크</h3><div id="englishLinksC"></div><div class="settings-row"><input class="settings-input" id="newEnglishLink" placeholder="유튜브 링크"><button class="btn btn-sm" onclick="addLink('english')">추가</button></div></div>
         <div class="settings-card">
             <h3>타임라인 시간 설정</h3>
@@ -526,15 +526,20 @@ const PHASES=[
 // ===== STATE =====
 let D=loadData();
 let viewDate=toLocalISO();
+let _userNavigatedDate=false;
 function vd(){return viewDate;}
 function isPast(){return viewDate<toLocalISO();}
+function maybeRollViewDate(){if(!_userNavigatedDate&&viewDate!==toLocalISO()){viewDate=toLocalISO();}}
 function changeViewDate(delta){
     const d=new Date(viewDate);d.setDate(d.getDate()+delta);
     const ds=toLocalISO(d);
-    if(ds>toLocalISO())return;
-    viewDate=ds;render();
+    const today=toLocalISO();
+    if(ds>today)return;
+    viewDate=ds;
+    _userNavigatedDate=(ds!==today);
+    render();
 }
-function goToday(){viewDate=toLocalISO();render();}
+function goToday(){viewDate=toLocalISO();_userNavigatedDate=false;render();}
 function pickDate(){openModal('pickDate',{current:viewDate});}
 let insightPeriod='week';
 
@@ -650,7 +655,7 @@ function creatureSVG(stage){
 }
 
 // ===== RENDER ALL =====
-function render(){renderHome();renderHabits();renderGoals();renderInsights();renderSettings();}
+function render(){maybeRollViewDate();renderHome();renderHabits();renderGoals();renderInsights();renderSettings();}
 
 function renderHome(){
     const now=new Date(),h=now.getHours();
@@ -1018,8 +1023,8 @@ function editTaskTime(idx){const t=vd();if(!D.dailyTasks||!D.dailyTasks[t]||!D.d
 function _applyTimeEdit(t){const ctx=window._tCtx;if(!ctx||!t)return;if(ctx.target==='habit'){const h=D.habits.find(x=>x.id===ctx.id);if(h)h.time=t;}else{const day=vd();if(D.dailyTasks[day]&&D.dailyTasks[day][ctx.idx])D.dailyTasks[day][ctx.idx].time=t;}window._tCtx=null;save();closeModal();render();}
 function setTimeNow(){_applyTimeEdit(_nowHHMM());}
 function saveManualTime(){const v=document.getElementById('mTimeEditInput').value;if(v)_applyTimeEdit(v);}
-function applyDatePick(){const v=document.getElementById('mDatePickInput').value;if(v){viewDate=v;closeModal();render();}}
-function pickTodayInModal(){viewDate=toLocalISO();closeModal();render();}
+function applyDatePick(){const v=document.getElementById('mDatePickInput').value;if(v){viewDate=v;_userNavigatedDate=(v!==toLocalISO());closeModal();render();}}
+function pickTodayInModal(){viewDate=toLocalISO();_userNavigatedDate=false;closeModal();render();}
 function setCurrentBook(idx){D.currentBook=idx;save();render();}
 const GROWTH_QUOTES=[
     {q:'작은 습관이 쌓여 큰 변화가 돼',s:'— 오늘도 한 걸음'},
@@ -1198,7 +1203,7 @@ function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classL
 render();
 syncFromCloud();
 setInterval(syncFromCloud,30000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncFromCloud();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){maybeRollViewDate();render();syncFromCloud();}});
 </script>
 </body>
 </html>

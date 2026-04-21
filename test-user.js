@@ -31,7 +31,7 @@ async function testFile(file){
     const scriptTags=dom.window.document.querySelectorAll('script:not([src])');
     let err=null;
     try {
-        const allScript=Array.from(scriptTags).map(s=>s.textContent).join('\n')+'\n\n// expose for tests\nwindow.D=D;window.viewDate=viewDate;window.CAT_ICONS=CAT_ICONS;window.CELEBRATE_MESSAGES=CELEBRATE_MESSAGES;window.HABIT_TIME_FALLBACK=HABIT_TIME_FALLBACK;window.__setViewDate=(d)=>{viewDate=d;};';
+        const allScript=Array.from(scriptTags).map(s=>s.textContent).join('\n')+'\n\n// expose for tests\nwindow.D=D;window.viewDate=viewDate;window.CAT_ICONS=CAT_ICONS;window.CELEBRATE_MESSAGES=CELEBRATE_MESSAGES;window.HABIT_TIME_FALLBACK=HABIT_TIME_FALLBACK;window.__setViewDate=(d)=>{viewDate=d;_userNavigatedDate=(d!==toLocalISO());};window.__setStaleVd=(d,nav)=>{viewDate=d;_userNavigatedDate=nav;};';
         w.eval(allScript);
     } catch(e){err=e;}
     check('JS executes without errors',!err,err&&err.message);
@@ -158,6 +158,19 @@ async function testFile(file){
         check('goToday resets to today',w.vd()===w.toLocalISO());
     }
 
+    // TEST 12b: day rollover — if user hasn't navigated, viewDate auto-updates to today
+    if(typeof w.maybeRollViewDate==='function'){
+        // Simulate stale viewDate (no nav) — date rolled over while app open
+        w.__setStaleVd('2020-01-01',false);
+        w.maybeRollViewDate();
+        check('maybeRollViewDate auto-updates stale viewDate when not navigated',w.vd()===w.toLocalISO(),'got '+w.vd());
+        // User-navigated past date: preserved
+        w.__setStaleVd('2020-01-01',true);
+        w.maybeRollViewDate();
+        check('maybeRollViewDate preserves viewDate when user navigated',w.vd()==='2020-01-01','got '+w.vd());
+        w.goToday();
+    }
+
     // TEST 13: Settings renders
     if(typeof w.renderSettings==='function'){
         w.renderSettings();
@@ -166,7 +179,7 @@ async function testFile(file){
         check('settings shows reset level button',doc.body.innerHTML.includes('레벨 1로 초기화'));
         check('settings shows reset times button',doc.body.innerHTML.includes('기본 시간으로 복원'));
         check('settings shows books section',doc.body.innerHTML.includes('읽는 책'));
-        check('version label v2026-04-21-g present',doc.body.innerHTML.includes('v2026-04-21-g'));
+        check('version label v2026-04-22-a present',doc.body.innerHTML.includes('v2026-04-22-a'));
     }
 
     // TEST 14: CAT_ICONS has all expected categories
