@@ -378,7 +378,7 @@
         <div class="settings-card"><h3>📚 읽는 책</h3><div id="booksList"></div><div class="settings-row"><input class="settings-input" id="newBookInput" placeholder="책 제목 추가"><button class="btn btn-sm" onclick="addBook()">추가</button></div></div>
         <div class="settings-card"><h3>레벨/XP 초기화</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">현재: Lv.<span id="curLv"></span> · XP <span id="curXp"></span></div><button class="btn-outline btn-sm" style="width:100%" onclick="resetLevel()">레벨 1로 초기화</button></div>
         <div class="settings-card"><h3>시간 기본값 복원</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">9시 기상 · 09:10 명상 · 09:30 홈트/러닝 · ... 기본 타임라인으로 되돌려요</div><button class="btn-outline btn-sm" style="width:100%" onclick="resetHabitTimes()">기본 시간으로 복원</button></div>
-        <div style="text-align:center;font-size:10px;color:var(--text-light);padding:8px 0">v2026-04-21-e</div>
+        <div style="text-align:center;font-size:10px;color:var(--text-light);padding:8px 0">v2026-04-21-f</div>
         <div class="settings-card"><h3>영어 학습 링크</h3><div id="englishLinksC"></div><div class="settings-row"><input class="settings-input" id="newEnglishLink" placeholder="유튜브 링크"><button class="btn btn-sm" onclick="addLink('english')">추가</button></div></div>
         <div class="settings-card"><h3>타임라인 시간 설정</h3><div id="timelineSettings"></div><button class="btn-outline btn-sm" style="width:100%;margin-top:10px" onclick="addTimelineItem()">+ 시간대 추가</button></div>
     </div>
@@ -430,7 +430,6 @@ const DEFAULT_HABITS = [
 ];
 const HABIT_TIME_FALLBACK={morning:'09:00',meditation:'09:10',workout:'09:30',running:'09:30','free-workout':'10:00','english-shadow':'10:30','english-grammar':'10:30',japanese:'10:45',diet:'11:00',laundry:'11:00',cleaning:'11:00',organize:'11:00',marketing:'11:30','work-part1':'12:00','work-part2':'16:00','work-block':'12:00','reels-plan':'12:00','reels-shoot':'12:00','reels-edit':'12:00',planning:'14:00',hobby:'15:00','income-shop':'16:00','income-thread':'16:00','income-coupang':'16:00',reading:'20:00','weekly-review':'20:00'};
 const HABIT_LINK_CAT={'english-shadow':'english','english-grammar':'english'};
-const WORKOUT_HABIT_IDS=new Set(['workout','free-workout','running']);
 function shortLinkLabel(u,fallback){try{const h=new URL(u).hostname.replace(/^www\./,'');if(h.includes('youtu'))return'YouTube';if(h.includes('netflix'))return'Netflix';return h.split('.')[0];}catch(e){return fallback;}}
 function getHabitLinks(h){const cat=HABIT_LINK_CAT[h.id];if(!cat)return [];return (D.links&&D.links[cat])||[];}
 
@@ -539,12 +538,10 @@ function migrateData(d){
     if(d.gardenName==null)d.gardenName='';
     if(!d.dailyTasks)d.dailyTasks={};
     if(!d.books){d.books=d.book?[d.book]:[];}
-    // Legacy D.dayVideos.workout → per-habit h.videos migration
+    // Legacy D.dayVideos.workout → workout habit only
     if(d.dayVideos&&d.dayVideos.workout&&Object.keys(d.dayVideos.workout).length&&d.habits){
-        ['workout','free-workout','running'].forEach(hid=>{
-            const h=d.habits.find(x=>x.id===hid);
-            if(h&&!h.videos){h.videos=JSON.parse(JSON.stringify(d.dayVideos.workout));}
-        });
+        const wh=d.habits.find(x=>x.id==='workout');
+        if(wh&&!wh.videos){wh.videos=JSON.parse(JSON.stringify(d.dayVideos.workout));}
         delete d.dayVideos;
     }
     if(d.habits){
@@ -888,7 +885,7 @@ function renderHabits(){
             const links=getHabitLinks(h);
             const isReading=h.id==='reading';
             const chipEls=[];
-            {
+            if(h.id==='workout'){
                 const dow=new Date(t).getDay();
                 const v=h.videos&&h.videos[dow];
                 if(v&&v.url)chipEls.push(`<a class="habit-chip" href="${v.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▶ ${v.kw||'영상'}</a>`);
@@ -1190,10 +1187,10 @@ function openModal(type,arg){
             <div class="modal-field"><label>카테고리</label><select id="mEditCat">${Object.keys(CAT_COLORS).map(c=>`<option${c===h.cat?' selected':''}>${c}</option>`).join('')}</select></div>
             <div class="modal-field"><label>상세</label><input id="mEditDetail" value="${h.detail||''}" placeholder="선택사항"></div>
             <div class="modal-field"><label>요일</label><div class="day-toggles" id="mEditDays">${dayNames.map((d,i)=>`<div class="day-toggle${h.days.includes(i)?' active':''}" data-day="${i}" onclick="this.classList.toggle('active')">${d}</div>`).join('')}</div></div>
-            <div class="modal-field"><label>요일별 영상 (선택)</label>
-                <div style="font-size:11px;color:var(--text-sub);margin:-4px 0 8px">입력한 요일에만 영상 칩이 뜹니다. 키워드는 칩에 표시될 이름</div>
-                ${dayNames.map((d,i)=>`<div class="day-video-item"><div class="day-video-day">${d}요일</div><div class="day-video-inputs"><input type="text" class="settings-input day-video-url" placeholder="URL" value="${(vids[i]&&vids[i].url)||''}" onchange="saveHabitVideo(${arg},${i},'url',this.value)"><input type="text" class="settings-input day-video-kw" placeholder="키워드" value="${(vids[i]&&vids[i].kw)||''}" onchange="saveHabitVideo(${arg},${i},'kw',this.value)"></div></div>`).join('')}
-            </div>
+            ${h.id==='workout'?`<div class="modal-field"><label>요일별 영상 (선택)</label>
+                <div style="font-size:11px;color:var(--text-sub);margin:-4px 0 8px">홈트 요일만 표시됨. 키워드는 칩에 뜰 이름</div>
+                ${h.days.slice().sort((a,b)=>a-b).map(i=>`<div class="day-video-item"><div class="day-video-day">${dayNames[i]}요일</div><div class="day-video-inputs"><input type="text" class="settings-input day-video-url" placeholder="URL" value="${(vids[i]&&vids[i].url)||''}" onchange="saveHabitVideo(${arg},${i},'url',this.value)"><input type="text" class="settings-input day-video-kw" placeholder="키워드" value="${(vids[i]&&vids[i].kw)||''}" onchange="saveHabitVideo(${arg},${i},'kw',this.value)"></div></div>`).join('')}
+            </div>`:''}
             <div class="modal-actions"><button class="btn" onclick="saveEditHabit(${arg})">저장</button><button class="btn-outline" onclick="closeModal()">취소</button></div>`;
     }
     else if(type==='addHabit'){

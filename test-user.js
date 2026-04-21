@@ -166,7 +166,7 @@ async function testFile(file){
         check('settings shows reset level button',doc.body.innerHTML.includes('레벨 1로 초기화'));
         check('settings shows reset times button',doc.body.innerHTML.includes('기본 시간으로 복원'));
         check('settings shows books section',doc.body.innerHTML.includes('읽는 책'));
-        check('version label v2026-04-21-e present',doc.body.innerHTML.includes('v2026-04-21-e'));
+        check('version label v2026-04-21-f present',doc.body.innerHTML.includes('v2026-04-21-f'));
     }
 
     // TEST 14: CAT_ICONS has all expected categories
@@ -197,36 +197,69 @@ async function testFile(file){
         check('empty video fields removes entry',!workout.videos[1]);
     }
 
-    // TEST 17: Edit modal shows day-video rows
+    // TEST 17: Edit modal — workout habit shows video section with h.days rows only
     if(typeof w.openModal==='function'){
-        w.openModal('editHabit',w.D.habits.findIndex(h=>h.id==='workout'));
+        const workoutIdx=w.D.habits.findIndex(h=>h.id==='workout');
+        const workoutDays=w.D.habits[workoutIdx].days;
+        w.openModal('editHabit',workoutIdx);
         await new Promise(r=>setTimeout(r,50));
         const mc=doc.getElementById('modalContent');
-        check('edit modal shows 요일별 영상 section',mc&&mc.textContent.includes('요일별 영상'));
-        check('edit modal has 7 video rows',mc&&mc.querySelectorAll('.day-video-item').length===7);
+        check('workout edit modal shows 요일별 영상 section',mc&&mc.textContent.includes('요일별 영상'));
+        check('workout edit modal has rows equal to h.days count',mc&&mc.querySelectorAll('.day-video-item').length===workoutDays.length,'got '+(mc?mc.querySelectorAll('.day-video-item').length:0)+' expected '+workoutDays.length);
         w.closeModal();
+
+        // Other habits should NOT show video section
+        const runningIdx=w.D.habits.findIndex(h=>h.id==='running');
+        if(runningIdx>=0){
+            w.openModal('editHabit',runningIdx);
+            await new Promise(r=>setTimeout(r,50));
+            const mc2=doc.getElementById('modalContent');
+            check('running edit modal does NOT show 요일별 영상 section',mc2&&!mc2.textContent.includes('요일별 영상'));
+            w.closeModal();
+        }
+        const engIdx=w.D.habits.findIndex(h=>h.id==='english-shadow');
+        if(engIdx>=0){
+            w.openModal('editHabit',engIdx);
+            await new Promise(r=>setTimeout(r,50));
+            const mc3=doc.getElementById('modalContent');
+            check('english-shadow edit modal does NOT show 요일별 영상 section',mc3&&!mc3.textContent.includes('요일별 영상'));
+            w.closeModal();
+        }
     }
 
-    // TEST 18: Habit chip shows only when today's video set, not otherwise
+    // TEST 18: Workout chip visibility (only when set, only on workout habit)
     const mondayDate='2026-04-20';
     if(new Date(mondayDate).getDay()===1){
         w.__setViewDate(mondayDate);
         const workoutIdx=w.D.habits.findIndex(h=>h.id==='workout');
-        // Ensure no video set
         if(w.D.habits[workoutIdx].videos)delete w.D.habits[workoutIdx].videos;
         w.render();
         await new Promise(r=>setTimeout(r,50));
         let chips=list.querySelectorAll('.habit-chip');
         let hasKw=[...chips].some(c=>c.textContent.includes('상체 30분'));
-        check('no chip when video not set for today',!hasKw);
-        // Now set video for Monday
+        check('no chip on workout when video unset',!hasKw);
+        // Set for Monday
         w.saveHabitVideo(workoutIdx,1,'url','https://youtube.com/a');
         w.saveHabitVideo(workoutIdx,1,'kw','상체 30분');
         w.render();
         await new Promise(r=>setTimeout(r,50));
         chips=list.querySelectorAll('.habit-chip');
         hasKw=[...chips].some(c=>c.textContent.includes('상체 30분'));
-        check('chip shows after setting video for today',hasKw,'chips: '+[...chips].map(c=>c.textContent).join('|'));
+        check('chip appears on workout when video set for Monday',hasKw,'chips: '+[...chips].map(c=>c.textContent).join('|'));
+    }
+    // Tuesday - running should not show video chip even if videos were set somehow
+    const tuesdayDate='2026-04-21';
+    if(new Date(tuesdayDate).getDay()===2){
+        w.__setViewDate(tuesdayDate);
+        const runningIdx=w.D.habits.findIndex(h=>h.id==='running');
+        if(runningIdx>=0){
+            w.D.habits[runningIdx].videos={2:{url:'https://legacy',kw:'러닝'}};
+            w.render();
+            await new Promise(r=>setTimeout(r,50));
+            const chips=list.querySelectorAll('.habit-chip');
+            const hasRunning=[...chips].some(c=>c.textContent.includes('러닝'));
+            check('running habit does NOT render video chip (workout-only rule)',!hasRunning);
+        }
     }
     w.goToday();
 
