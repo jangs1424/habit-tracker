@@ -378,8 +378,7 @@
         <div class="settings-card"><h3>📚 읽는 책</h3><div id="booksList"></div><div class="settings-row"><input class="settings-input" id="newBookInput" placeholder="책 제목 추가"><button class="btn btn-sm" onclick="addBook()">추가</button></div></div>
         <div class="settings-card"><h3>레벨/XP 초기화</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">현재: Lv.<span id="curLv"></span> · XP <span id="curXp"></span></div><button class="btn-outline btn-sm" style="width:100%" onclick="resetLevel()">레벨 1로 초기화</button></div>
         <div class="settings-card"><h3>시간 기본값 복원</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">9시 기상 · 09:10 명상 · 09:30 홈트/러닝 · ... 기본 타임라인으로 되돌려요</div><button class="btn-outline btn-sm" style="width:100%" onclick="resetHabitTimes()">기본 시간으로 복원</button></div>
-        <div style="text-align:center;font-size:10px;color:var(--text-light);padding:8px 0">v2026-04-21-d</div>
-        <div class="settings-card"><h3>🎬 요일별 운동 영상</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">홈트/러닝/자유운동 습관에 요일별 영상 연결. 칩 탭 = YouTube 바로 열림</div><button class="btn-outline btn-sm" style="width:100%" onclick="openModal('dayVideosSetup',{cat:'workout'})">요일별 영상 설정</button></div>
+        <div style="text-align:center;font-size:10px;color:var(--text-light);padding:8px 0">v2026-04-21-e</div>
         <div class="settings-card"><h3>영어 학습 링크</h3><div id="englishLinksC"></div><div class="settings-row"><input class="settings-input" id="newEnglishLink" placeholder="유튜브 링크"><button class="btn btn-sm" onclick="addLink('english')">추가</button></div></div>
         <div class="settings-card"><h3>타임라인 시간 설정</h3><div id="timelineSettings"></div><button class="btn-outline btn-sm" style="width:100%;margin-top:10px" onclick="addTimelineItem()">+ 시간대 추가</button></div>
     </div>
@@ -540,8 +539,14 @@ function migrateData(d){
     if(d.gardenName==null)d.gardenName='';
     if(!d.dailyTasks)d.dailyTasks={};
     if(!d.books){d.books=d.book?[d.book]:[];}
-    if(!d.dayVideos)d.dayVideos={workout:{}};
-    if(!d.dayVideos.workout)d.dayVideos.workout={};
+    // Legacy D.dayVideos.workout → per-habit h.videos migration
+    if(d.dayVideos&&d.dayVideos.workout&&Object.keys(d.dayVideos.workout).length&&d.habits){
+        ['workout','free-workout','running'].forEach(hid=>{
+            const h=d.habits.find(x=>x.id===hid);
+            if(h&&!h.videos){h.videos=JSON.parse(JSON.stringify(d.dayVideos.workout));}
+        });
+        delete d.dayVideos;
+    }
     if(d.habits){
         const wbIdx=d.habits.findIndex(h=>h.id==='work-block');
         if(wbIdx>=0){
@@ -571,7 +576,7 @@ function loadData(){
         weeklyGoals:[{name:'릴스 2개',target:2,current:0},{name:'홈트 3회',target:3,current:0},{name:'러닝 2회',target:2,current:0}],
         checks:{},journals:{},links:{workout:[],english:[]},
         books:[],xp:0,level:1,gardenName:'',englishProgress:0,running:{},
-        challengeDays:180,restDays:{},skips:{},dailyTasks:{},dayVideos:{workout:{}}
+        challengeDays:180,restDays:{},skips:{},dailyTasks:{}
     });
 }
 function save(){D._syncTime=Date.now();localStorage.setItem('habitGarden',JSON.stringify(D));syncToCloud();}
@@ -883,14 +888,10 @@ function renderHabits(){
             const links=getHabitLinks(h);
             const isReading=h.id==='reading';
             const chipEls=[];
-            if(WORKOUT_HABIT_IDS.has(h.id)){
+            {
                 const dow=new Date(t).getDay();
-                const v=D.dayVideos&&D.dayVideos.workout&&D.dayVideos.workout[dow];
-                if(v&&v.url){
-                    chipEls.push(`<a class="habit-chip" href="${v.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▶ ${v.kw||'영상'}</a>`);
-                } else {
-                    chipEls.push(`<span class="habit-chip" onclick="event.stopPropagation();openModal('dayVideosSetup',{cat:'workout'})">▶ 영상 설정</span>`);
-                }
+                const v=h.videos&&h.videos[dow];
+                if(v&&v.url)chipEls.push(`<a class="habit-chip" href="${v.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▶ ${v.kw||'영상'}</a>`);
             }
             links.forEach((u,i)=>chipEls.push(`<a class="habit-chip" href="${u}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▶ ${shortLinkLabel(u,'영상 '+(i+1))}</a>`));
             if(isReading){
@@ -1182,12 +1183,17 @@ function openModal(type,arg){
     const dayNames=['일','월','화','수','목','금','토'];
     if(type==='editHabit'){
         const h=D.habits[arg];
+        const vids=h.videos||{};
         m.innerHTML=`<h3>습관 수정</h3>
             <div class="modal-field"><label>이름</label><input id="mEditName" value="${h.name}"></div>
             <div class="modal-field"><label>시간</label><input type="time" id="mEditTime" value="${h.time||'12:00'}"></div>
             <div class="modal-field"><label>카테고리</label><select id="mEditCat">${Object.keys(CAT_COLORS).map(c=>`<option${c===h.cat?' selected':''}>${c}</option>`).join('')}</select></div>
             <div class="modal-field"><label>상세</label><input id="mEditDetail" value="${h.detail||''}" placeholder="선택사항"></div>
             <div class="modal-field"><label>요일</label><div class="day-toggles" id="mEditDays">${dayNames.map((d,i)=>`<div class="day-toggle${h.days.includes(i)?' active':''}" data-day="${i}" onclick="this.classList.toggle('active')">${d}</div>`).join('')}</div></div>
+            <div class="modal-field"><label>요일별 영상 (선택)</label>
+                <div style="font-size:11px;color:var(--text-sub);margin:-4px 0 8px">입력한 요일에만 영상 칩이 뜹니다. 키워드는 칩에 표시될 이름</div>
+                ${dayNames.map((d,i)=>`<div class="day-video-item"><div class="day-video-day">${d}요일</div><div class="day-video-inputs"><input type="text" class="settings-input day-video-url" placeholder="URL" value="${(vids[i]&&vids[i].url)||''}" onchange="saveHabitVideo(${arg},${i},'url',this.value)"><input type="text" class="settings-input day-video-kw" placeholder="키워드" value="${(vids[i]&&vids[i].kw)||''}" onchange="saveHabitVideo(${arg},${i},'kw',this.value)"></div></div>`).join('')}
+            </div>
             <div class="modal-actions"><button class="btn" onclick="saveEditHabit(${arg})">저장</button><button class="btn-outline" onclick="closeModal()">취소</button></div>`;
     }
     else if(type==='addHabit'){
@@ -1222,21 +1228,6 @@ function openModal(type,arg){
             <button class="btn-outline" style="width:100%;margin-bottom:12px" onclick="pickTodayInModal()">오늘로 이동</button>
             <div class="modal-actions"><button class="btn" onclick="applyDatePick()">이 날짜 보기</button><button class="btn-outline" onclick="closeModal()">취소</button></div>`;
     }
-    else if(type==='dayVideosSetup'){
-        const cat=arg.cat||'workout';
-        const days=['일','월','화','수','목','금','토'];
-        const videos=(D.dayVideos&&D.dayVideos[cat])||{};
-        m.innerHTML=`<h3>🎬 요일별 운동 영상</h3>
-            <div style="font-size:11px;color:var(--text-sub);margin-bottom:14px">URL과 키워드(버튼 이름) 입력. 예: "상체", "유산소". 운동 습관 옆 버튼이 이 이름으로 뜸</div>
-            ${days.map((d,i)=>`<div class="day-video-item">
-                <div class="day-video-day">${d}요일</div>
-                <div class="day-video-inputs">
-                    <input type="text" class="settings-input day-video-url" placeholder="YouTube URL" value="${(videos[i]&&videos[i].url)||''}" onchange="saveDayVideo('${cat}',${i},'url',this.value)">
-                    <input type="text" class="settings-input day-video-kw" placeholder="키워드" value="${(videos[i]&&videos[i].kw)||''}" onchange="saveDayVideo('${cat}',${i},'kw',this.value)">
-                </div>
-            </div>`).join('')}
-            <div class="modal-actions"><button class="btn" onclick="closeModal();render()">완료</button></div>`;
-    }
     else if(type==='pickBook'){
         const books=D.books||[];
         const cur=D.currentBook;
@@ -1247,7 +1238,7 @@ function openModal(type,arg){
     }
     o.classList.add('show');
 }
-function saveDayVideo(cat,dow,field,value){if(!D.dayVideos)D.dayVideos={};if(!D.dayVideos[cat])D.dayVideos[cat]={};if(!D.dayVideos[cat][dow])D.dayVideos[cat][dow]={};D.dayVideos[cat][dow][field]=value;save();}
+function saveHabitVideo(idx,dow,field,value){const h=D.habits[idx];if(!h)return;if(!h.videos)h.videos={};if(!h.videos[dow])h.videos[dow]={};h.videos[dow][field]=value;if(!h.videos[dow].url&&!h.videos[dow].kw)delete h.videos[dow];save();}
 function _selectBook(i){D.currentBook=i;save();closeModal();render();}
 function _removeBookFromModal(i){if(!confirm('이 책 목록에서 지울까요?'))return;D.books.splice(i,1);if(D.currentBook===i)D.currentBook=null;else if(D.currentBook>i)D.currentBook--;save();openModal('pickBook');}
 function _addBookFromModal(){const el=document.getElementById('mBookAddInput');const v=el?el.value.trim():'';if(!v)return;if(!D.books)D.books=[];D.books.push(v);save();openModal('pickBook');}

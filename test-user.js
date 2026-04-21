@@ -166,7 +166,7 @@ async function testFile(file){
         check('settings shows reset level button',doc.body.innerHTML.includes('레벨 1로 초기화'));
         check('settings shows reset times button',doc.body.innerHTML.includes('기본 시간으로 복원'));
         check('settings shows books section',doc.body.innerHTML.includes('읽는 책'));
-        check('version label v2026-04-21-d present',doc.body.innerHTML.includes('v2026-04-21-d'));
+        check('version label v2026-04-21-e present',doc.body.innerHTML.includes('v2026-04-21-e'));
     }
 
     // TEST 14: CAT_ICONS has all expected categories
@@ -184,36 +184,59 @@ async function testFile(file){
         }
     });
 
-    // TEST 16: Day videos setup
-    check('D.dayVideos initialized', w.D.dayVideos && w.D.dayVideos.workout);
-    if(typeof w.saveDayVideo==='function'){
-        w.saveDayVideo('workout', 1, 'url', 'https://youtube.com/watch?v=test');
-        w.saveDayVideo('workout', 1, 'kw', '상체');
-        check('saveDayVideo stores url+kw', w.D.dayVideos.workout[1].url==='https://youtube.com/watch?v=test' && w.D.dayVideos.workout[1].kw==='상체');
+    // TEST 16: Per-habit videos via saveHabitVideo
+    if(typeof w.saveHabitVideo==='function'){
+        const workoutIdx=w.D.habits.findIndex(h=>h.id==='workout');
+        w.saveHabitVideo(workoutIdx,1,'url','https://youtube.com/watch?v=test');
+        w.saveHabitVideo(workoutIdx,1,'kw','상체');
+        const workout=w.D.habits[workoutIdx];
+        check('saveHabitVideo stores url+kw on habit',workout.videos&&workout.videos[1]&&workout.videos[1].url==='https://youtube.com/watch?v=test'&&workout.videos[1].kw==='상체');
+        // Empty both fields should delete entry
+        w.saveHabitVideo(workoutIdx,1,'url','');
+        w.saveHabitVideo(workoutIdx,1,'kw','');
+        check('empty video fields removes entry',!workout.videos[1]);
     }
+
+    // TEST 17: Edit modal shows day-video rows
     if(typeof w.openModal==='function'){
-        w.openModal('dayVideosSetup',{cat:'workout'});
+        w.openModal('editHabit',w.D.habits.findIndex(h=>h.id==='workout'));
         await new Promise(r=>setTimeout(r,50));
         const mc=doc.getElementById('modalContent');
-        check('dayVideosSetup modal opens',mc&&mc.textContent.includes('요일별 운동 영상'));
-        check('dayVideosSetup shows 7 day rows',mc&&mc.querySelectorAll('.day-video-item').length===7);
+        check('edit modal shows 요일별 영상 section',mc&&mc.textContent.includes('요일별 영상'));
+        check('edit modal has 7 video rows',mc&&mc.querySelectorAll('.day-video-item').length===7);
         w.closeModal();
     }
 
-    // TEST 17: Workout habit shows chip on set day
-    const mondayDate='2026-04-20'; // Monday
+    // TEST 18: Habit chip shows only when today's video set, not otherwise
+    const mondayDate='2026-04-20';
     if(new Date(mondayDate).getDay()===1){
         w.__setViewDate(mondayDate);
-        w.D.dayVideos.workout[1]={url:'https://youtube.com/a',kw:'상체 30분'};
+        const workoutIdx=w.D.habits.findIndex(h=>h.id==='workout');
+        // Ensure no video set
+        if(w.D.habits[workoutIdx].videos)delete w.D.habits[workoutIdx].videos;
         w.render();
         await new Promise(r=>setTimeout(r,50));
-        const chips=list.querySelectorAll('.habit-chip');
-        const hasKwChip=[...chips].some(c=>c.textContent.includes('상체 30분'));
-        check('workout habit shows kw chip on Monday',hasKwChip,'chips: '+[...chips].map(c=>c.textContent).join('|'));
+        let chips=list.querySelectorAll('.habit-chip');
+        let hasKw=[...chips].some(c=>c.textContent.includes('상체 30분'));
+        check('no chip when video not set for today',!hasKw);
+        // Now set video for Monday
+        w.saveHabitVideo(workoutIdx,1,'url','https://youtube.com/a');
+        w.saveHabitVideo(workoutIdx,1,'kw','상체 30분');
+        w.render();
+        await new Promise(r=>setTimeout(r,50));
+        chips=list.querySelectorAll('.habit-chip');
+        hasKw=[...chips].some(c=>c.textContent.includes('상체 30분'));
+        check('chip shows after setting video for today',hasKw,'chips: '+[...chips].map(c=>c.textContent).join('|'));
     }
     w.goToday();
 
-    // TEST 18: Daily task CRUD
+    // TEST 19: Settings no longer has "요일별 운동 영상" card
+    if(typeof w.renderSettings==='function'){
+        w.renderSettings();
+        check('settings removed 요일별 운동 영상 card (moved to habit edit)',!doc.body.innerHTML.includes('🎬 요일별 운동 영상'));
+    }
+
+    // TEST 20: Daily task CRUD
     if(typeof w.addDailyTask==='function'){
         const inp=doc.getElementById('newTaskName');
         const ti=doc.getElementById('newTaskTime');
