@@ -166,7 +166,7 @@ async function testFile(file){
         check('settings shows reset level button',doc.body.innerHTML.includes('레벨 1로 초기화'));
         check('settings shows reset times button',doc.body.innerHTML.includes('기본 시간으로 복원'));
         check('settings shows books section',doc.body.innerHTML.includes('읽는 책'));
-        check('version label v2026-04-21-f present',doc.body.innerHTML.includes('v2026-04-21-f'));
+        check('version label v2026-04-21-g present',doc.body.innerHTML.includes('v2026-04-21-g'));
     }
 
     // TEST 14: CAT_ICONS has all expected categories
@@ -225,6 +225,31 @@ async function testFile(file){
             check('english-shadow edit modal does NOT show 요일별 영상 section',mc3&&!mc3.textContent.includes('요일별 영상'));
             w.closeModal();
         }
+    }
+
+    // TEST 17b: toggleEditDay live updates video section rows
+    if(typeof w.toggleEditDay==='function'&&typeof w.openModal==='function'){
+        const workoutIdx=w.D.habits.findIndex(h=>h.id==='workout');
+        // Reset to [1,3,5]
+        w.D.habits[workoutIdx].days=[1,3,5];
+        w.openModal('editHabit',workoutIdx);
+        await new Promise(r=>setTimeout(r,50));
+        const sec=doc.getElementById('mEditVideosSection');
+        const beforeCount=sec?sec.querySelectorAll('.day-video-item').length:0;
+        check('before toggle — 3 video rows (monday/wed/fri)',beforeCount===3,'got '+beforeCount);
+        // Find Thursday toggle (data-day=4) and simulate click
+        const thuToggle=doc.querySelector('#mEditDays .day-toggle[data-day="4"]');
+        if(thuToggle){
+            w.toggleEditDay(workoutIdx,4,thuToggle);
+            const afterCount=doc.getElementById('mEditVideosSection').querySelectorAll('.day-video-item').length;
+            check('after adding Thursday — 4 video rows',afterCount===4,'got '+afterCount);
+            check('h.days updated with Thursday',w.D.habits[workoutIdx].days.includes(4));
+            // Remove Thursday
+            w.toggleEditDay(workoutIdx,4,thuToggle);
+            const afterRemoveCount=doc.getElementById('mEditVideosSection').querySelectorAll('.day-video-item').length;
+            check('after removing Thursday — 3 video rows',afterRemoveCount===3,'got '+afterRemoveCount);
+        }
+        w.closeModal();
     }
 
     // TEST 18: Workout chip visibility (only when set, only on workout habit)

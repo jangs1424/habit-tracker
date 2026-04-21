@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="해빗">
+    <meta name="theme-color" content="#FAFBFE" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#FAFBFE">
     <link rel="apple-touch-icon" href="icon-creature-180.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icon-creature-180.png">
@@ -15,6 +16,7 @@
     <title>해빗 트래커</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
+        html{background:#FAFBFE}
         :root{--bg:#FAFBFE;--card:#FFF;--primary:#6C63FF;--primary-light:#EDE9FF;--success:#2DD4A0;--success-light:#E6FBF5;--warning:#FFB84D;--danger:#FF6B6B;--text:#1E1E3A;--text-sub:#8E8EA9;--text-light:#B4B4CC;--border:#EDEDF5;--shadow:0 4px 20px rgba(108,99,255,.06);--shadow-lg:0 8px 32px rgba(108,99,255,.1);--radius:20px;--radius-sm:14px}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));overflow-x:hidden;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
         .container{max-width:480px;margin:0 auto;padding:20px 16px}
@@ -418,7 +420,7 @@
         <div class="settings-card"><h3>📚 읽는 책</h3><div id="booksList"></div><div class="settings-row"><input class="settings-input" id="newBookInput" placeholder="책 제목 추가"><button class="btn btn-sm" onclick="addBook()">추가</button></div></div>
         <div class="settings-card"><h3>레벨/XP 초기화</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">현재: Lv.<span id="curLv"></span> · XP <span id="curXp"></span></div><button class="btn-outline btn-sm" style="width:100%" onclick="resetLevel()">레벨 1로 초기화</button></div>
         <div class="settings-card"><h3>시간 기본값 복원</h3><div style="font-size:11px;color:var(--text-sub);margin-bottom:10px">9시 기상 · 09:10 명상 · 09:30 홈트/러닝 · ... 기본 타임라인으로 되돌려요</div><button class="btn-outline btn-sm" style="width:100%" onclick="resetHabitTimes()">기본 시간으로 복원</button></div>
-        <div style="text-align:center;font-size:10px;color:var(--text-light);padding:8px 0">v2026-04-21-f</div>
+        <div style="text-align:center;font-size:10px;color:var(--text-light);padding:8px 0">v2026-04-21-g</div>
         <div class="settings-card"><h3>영어 학습 링크</h3><div id="englishLinksC"></div><div class="settings-row"><input class="settings-input" id="newEnglishLink" placeholder="유튜브 링크"><button class="btn btn-sm" onclick="addLink('english')">추가</button></div></div>
         <div class="settings-card">
             <h3>타임라인 시간 설정</h3>
@@ -1084,11 +1086,8 @@ function openModal(type,arg){
             <div class="modal-field"><label>시간</label><input type="time" id="mEditTime" value="${h.time||'12:00'}"></div>
             <div class="modal-field"><label>카테고리</label><select id="mEditCat">${Object.keys(CAT_COLORS).map(c=>`<option${c===h.cat?' selected':''}>${c}</option>`).join('')}</select></div>
             <div class="modal-field"><label>상세</label><input id="mEditDetail" value="${h.detail||''}" placeholder="선택사항"></div>
-            <div class="modal-field"><label>요일</label><div class="day-toggles" id="mEditDays">${dayNames.map((d,i)=>`<div class="day-toggle${h.days.includes(i)?' active':''}" data-day="${i}" onclick="this.classList.toggle('active')">${d}</div>`).join('')}</div></div>
-            ${h.id==='workout'?`<div class="modal-field"><label>요일별 영상 (선택)</label>
-                <div style="font-size:11px;color:var(--text-sub);margin:-4px 0 8px">홈트 요일만 표시됨. 키워드는 칩에 뜰 이름</div>
-                ${h.days.slice().sort((a,b)=>a-b).map(i=>`<div class="day-video-item"><div class="day-video-day">${dayNames[i]}요일</div><div class="day-video-inputs"><input type="text" class="settings-input day-video-url" placeholder="URL" value="${(vids[i]&&vids[i].url)||''}" onchange="saveHabitVideo(${idx},${i},'url',this.value)"><input type="text" class="settings-input day-video-kw" placeholder="키워드" value="${(vids[i]&&vids[i].kw)||''}" onchange="saveHabitVideo(${idx},${i},'kw',this.value)"></div></div>`).join('')}
-            </div>`:''}
+            <div class="modal-field"><label>요일</label><div class="day-toggles" id="mEditDays">${dayNames.map((d,i)=>`<div class="day-toggle${h.days.includes(i)?' active':''}" data-day="${i}" onclick="toggleEditDay(${idx},${i},this)">${d}</div>`).join('')}</div></div>
+            ${h.id==='workout'?`<div class="modal-field" id="mEditVideosSection">${renderVideoSectionHTML(idx)}</div>`:''}
             <div class="modal-actions"><button class="btn" onclick="saveEditHabit(${idx})">저장</button><button class="btn-outline" onclick="closeModal()">취소</button></div>`;
     }
     else if(type==='addHabit'){
@@ -1142,6 +1141,23 @@ function openModal(type,arg){
     o.classList.add('show');
 }
 function saveHabitVideo(idx,dow,field,value){const h=D.habits[idx];if(!h)return;if(!h.videos)h.videos={};if(!h.videos[dow])h.videos[dow]={};h.videos[dow][field]=value;if(!h.videos[dow].url&&!h.videos[dow].kw)delete h.videos[dow];save();}
+function renderVideoSectionHTML(idx){
+    const h=D.habits[idx];if(!h||h.id!=='workout')return '';
+    const vids=h.videos||{};
+    const dn=['일','월','화','수','목','금','토'];
+    return `<label>요일별 영상 (선택)</label>
+        <div style="font-size:11px;color:var(--text-sub);margin:-4px 0 8px">홈트 요일만 표시됨. 키워드는 칩에 뜰 이름</div>
+        ${h.days.slice().sort((a,b)=>a-b).map(i=>`<div class="day-video-item"><div class="day-video-day">${dn[i]}요일</div><div class="day-video-inputs"><input type="text" class="settings-input day-video-url" placeholder="URL" value="${(vids[i]&&vids[i].url)||''}" onchange="saveHabitVideo(${idx},${i},'url',this.value)"><input type="text" class="settings-input day-video-kw" placeholder="키워드" value="${(vids[i]&&vids[i].kw)||''}" onchange="saveHabitVideo(${idx},${i},'kw',this.value)"></div></div>`).join('')}`;
+}
+function toggleEditDay(idx,dayIdx,el){
+    const h=D.habits[idx];if(!h)return;
+    const has=h.days.includes(dayIdx);
+    if(has){if(h.days.length<=1){return;}h.days=h.days.filter(d=>d!==dayIdx);el.classList.remove('active');}
+    else{h.days.push(dayIdx);el.classList.add('active');}
+    save();
+    const sec=document.getElementById('mEditVideosSection');
+    if(sec)sec.innerHTML=renderVideoSectionHTML(idx);
+}
 function _selectBook(i){D.currentBook=i;save();closeModal();render();}
 function _removeBookFromModal(i){if(!confirm('이 책 목록에서 지울까요?'))return;D.books.splice(i,1);if(D.currentBook===i)D.currentBook=null;else if(D.currentBook>i)D.currentBook--;save();openModal('pickBook');}
 function _addBookFromModal(){const el=document.getElementById('mBookAddInput');const v=el?el.value.trim():'';if(!v)return;if(!D.books)D.books=[];D.books.push(v);save();openModal('pickBook');}
